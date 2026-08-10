@@ -14,6 +14,16 @@ There is no global POTD. Every Codeforces rating from 800 through 3500 has an in
 - Switch ratings without changing or completing assignments for other ratings.
 - Keep assignments and preferences locally in browser storage.
 
+## Screenshots
+
+### Rating-specific POTD popup
+
+![CF-Daily popup showing a 1400-rated Problem of the Day](docs/images/popup-potd.png)
+
+### Codeforces problemset integration
+
+![CF-Daily Problem of the Day row in the Codeforces problemset](docs/images/problemset-potd.png)
+
 ## How daily assignments work
 
 The first time you select a rating on a given day, CF-Daily loads the Codeforces problemset and your accepted submissions. It selects an unsolved problem at the exact chosen rating and saves its contest and problem ID using this combination:
