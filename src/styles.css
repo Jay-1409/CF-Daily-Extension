@@ -1,15 +1,42 @@
 
-.accepted{
-    border-left: 6px solid #D4EDC9;
-}
-.accepted :nth-child(3){
-    background-color: #D4EDC9;
+#cf-daily-potd {
+    border-left: 4px solid #ff4155;
+    background: #fff9fa;
 }
 
-.rejected{
-    border-left: 6px solid #FFE3E3;
+#cf-daily-potd.cf-daily-completed {
+    border-left-color: #238636;
+    background: #f4fbf6;
 }
 
-.rejected :nth-child(3){
-    background-color: #FFE3E3;
+#cf-daily-potd > td:first-child {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+#cf-daily-potd .cf-daily-tags {
+    margin-top: 0.25em;
+    font-size: 0.9em;
+}
+
+#cf-daily-potd .cf-daily-tags a {
+    text-decoration: none;
+}
+
+#cf-daily-potd .cf-daily-status {
+    margin-left: 0.4em;
+    padding: 0.15em 0.45em;
+    border-radius: 999px;
+    background: #d4edc9;
+    color: #216e39;
+    font-size: 0.75em;
+    font-weight: 700;
+}
+
+#cf-daily-potd .cf-daily-solved {
+    font-size: 1.1rem;
+}
+
+#cf-daily-potd .cf-daily-solved img {
+    vertical-align: middle;
 }
