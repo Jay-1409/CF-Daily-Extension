@@ -56,7 +56,13 @@ CF-Daily is a Manifest V3 extension built with plain HTML, CSS, and JavaScript. 
 Run the selection and persistence tests with:
 
 ```bash
-node tests/potd.test.js
+node --test
+```
+
+Create a Chrome Web Store ZIP directly from the canonical extension tree:
+
+```bash
+zip -r ../CF-Daily-Web-Store-v1.3.2.zip manifest.json src icons LICENSE -x '*.DS_Store'
 ```
 
 The main extension files are:

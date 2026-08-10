@@ -7,14 +7,6 @@ let loadVersion = 0;
 let problemsetPromise;
 let solvedProblemsPromise;
 
-function storageGet(keys) {
-    return new Promise(resolve => chrome.storage.local.get(keys, resolve));
-}
-
-function storageSet(values) {
-    return new Promise(resolve => chrome.storage.local.set(values, resolve));
-}
-
 function setStatus(message) {
     output.replaceChildren();
     output.classList.remove('completed');
@@ -70,7 +62,7 @@ async function loadProblem() {
 
         const day = CFDaily.dateKey();
         const assignmentKey = CFDaily.assignmentStorageKey(handle, rating, day);
-        const assignment = await storageGet(assignmentKey);
+        const assignment = await chrome.storage.local.get(assignmentKey);
         const problem = CFDaily.getDailyProblem(
             problems,
             rating,
@@ -86,7 +78,7 @@ async function loadProblem() {
 
         const selectedProblemKey = CFDaily.problemKey(problem);
         if (assignment[assignmentKey] !== selectedProblemKey) {
-            await storageSet({ [assignmentKey]: selectedProblemKey });
+            await chrome.storage.local.set({ [assignmentKey]: selectedProblemKey });
         }
         if (version !== loadVersion) return;
 
@@ -107,11 +99,11 @@ async function initialise() {
         ratingSelect.append(option);
     }
 
-    const saved = await storageGet(['selectedRating', 'rating', 'name']);
+    const saved = await chrome.storage.local.get(['selectedRating', 'rating', 'name']);
     handle = saved.name || 'Enter';
     const selectedRating = CFDaily.normalizeRating(saved.selectedRating ?? saved.rating);
     ratingSelect.value = String(selectedRating);
-    await storageSet({ selectedRating });
+    await chrome.storage.local.set({ selectedRating });
 
     userNote.textContent = handle === 'Enter'
         ? 'Sign in on Codeforces to exclude solved problems.'
@@ -122,7 +114,7 @@ async function initialise() {
 
 ratingSelect.addEventListener('change', async () => {
     const selectedRating = CFDaily.normalizeRating(ratingSelect.value);
-    await storageSet({ selectedRating });
+    await chrome.storage.local.set({ selectedRating });
     await loadProblem();
 });
 

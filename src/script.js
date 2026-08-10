@@ -14,14 +14,6 @@
     let problemsetPromise;
     let solvedProblemsPromise;
 
-    function storageGet(keys) {
-        return new Promise(resolve => chrome.storage.local.get(keys, resolve));
-    }
-
-    function storageSet(values) {
-        return new Promise(resolve => chrome.storage.local.set(values, resolve));
-    }
-
     function detectHandle() {
         const profileLink = document.querySelector('.lang-chooser a[href*="/profile/"]');
         if (!profileLink) return 'Enter';
@@ -114,9 +106,7 @@
 
         try {
             const users = await CFDaily.fetchApi(`user.info?handles=${encodeURIComponent(currentHandle)}`);
-            const userRating = users[0]?.rating ?? CFDaily.DEFAULT_RATING;
-            await storageSet({ rating: CFDaily.normalizeRating(userRating) });
-            return CFDaily.normalizeRating(userRating);
+            return CFDaily.normalizeRating(users[0]?.rating);
         } catch (error) {
             console.error(error);
             return CFDaily.DEFAULT_RATING;
@@ -140,7 +130,7 @@
 
             const day = CFDaily.dateKey();
             const assignmentKey = CFDaily.assignmentStorageKey(currentHandle, rating, day);
-            const assignment = await storageGet(assignmentKey);
+            const assignment = await chrome.storage.local.get(assignmentKey);
             const problem = CFDaily.getDailyProblem(
                 problems,
                 rating,
@@ -156,7 +146,7 @@
 
             const selectedProblemKey = CFDaily.problemKey(problem);
             if (assignment[assignmentKey] !== selectedProblemKey) {
-                await storageSet({ [assignmentKey]: selectedProblemKey });
+                await chrome.storage.local.set({ [assignmentKey]: selectedProblemKey });
             }
             if (version !== renderVersion) return;
 
@@ -177,14 +167,14 @@
 
     async function initialise() {
         currentHandle = detectHandle();
-        await storageSet({ name: currentHandle });
+        await chrome.storage.local.set({ name: currentHandle });
 
-        const saved = await storageGet(['selectedRating', 'rating']);
+        const saved = await chrome.storage.local.get(['selectedRating', 'rating']);
         const selectedRating = saved.selectedRating === undefined
             ? await defaultRating(saved.rating)
             : CFDaily.normalizeRating(saved.selectedRating);
 
-        await storageSet({ selectedRating });
+        await chrome.storage.local.set({ selectedRating });
         await loadProblem(selectedRating);
     }
 

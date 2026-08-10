@@ -5,11 +5,10 @@
     const DEFAULT_RATING = 800;
 
     function ratings() {
-        const values = [];
-        for (let rating = MIN_RATING; rating <= MAX_RATING; rating += RATING_STEP) {
-            values.push(rating);
-        }
-        return values;
+        return Array.from(
+            { length: (MAX_RATING - MIN_RATING) / RATING_STEP + 1 },
+            (_, index) => MIN_RATING + index * RATING_STEP
+        );
     }
 
     function normalizeRating(value, fallback = DEFAULT_RATING) {
@@ -93,11 +92,9 @@
 
     async function fetchProblemset() {
         const result = await fetchApi('problemset.problems');
-        const statistics = new Map();
-
-        result.problems.forEach((problem, index) => {
-            statistics.set(problemKey(problem), result.problemStatistics[index]);
-        });
+        const statistics = new Map(
+            result.problemStatistics.map(statistic => [problemKey(statistic), statistic])
+        );
 
         return { problems: result.problems, statistics };
     }
@@ -119,8 +116,6 @@
 
     const api = {
         DEFAULT_RATING,
-        MAX_RATING,
-        MIN_RATING,
         assignmentStorageKey,
         dateKey,
         fetchApi,

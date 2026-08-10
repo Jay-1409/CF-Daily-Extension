@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const test = require('node:test');
 const CFdaily = require('../src/potd.js');
 
 const problems = [
@@ -7,52 +8,46 @@ const problems = [
     { contestId: 3, index: 'B', name: 'Harder', rating: 900 }
 ];
 
-async function run() {
+test('daily assignments are stable, unsolved, and isolated', () => {
     const firstPick = CFdaily.pickDailyProblem(problems, 800, '2026-08-10');
     const repeatedPick = CFdaily.pickDailyProblem([...problems].reverse(), 800, '2026-08-10');
-
-    assert.equal(firstPick.rating, 800, 'selects only the requested rating');
-    assert.equal(
-        CFdaily.problemKey(firstPick),
-        CFdaily.problemKey(repeatedPick),
-        'selection does not depend on Codeforces API ordering'
-    );
-
     const solved = new Set([CFdaily.problemKey(firstPick)]);
-    const unsolvedPick = CFdaily.pickDailyProblem(problems, 800, '2026-08-10', solved);
-    assert.notEqual(CFdaily.problemKey(unsolvedPick), CFdaily.problemKey(firstPick), 'excludes solved problems');
 
-    const fixedPick = CFdaily.getDailyProblem(
-        problems,
-        800,
-        '2026-08-10',
-        solved,
+    assert.equal(firstPick.rating, 800);
+    assert.equal(CFdaily.problemKey(firstPick), CFdaily.problemKey(repeatedPick));
+    assert.notEqual(
+        CFdaily.problemKey(CFdaily.pickDailyProblem(problems, 800, '2026-08-10', solved)),
         CFdaily.problemKey(firstPick)
     );
     assert.equal(
-        CFdaily.problemKey(fixedPick),
-        CFdaily.problemKey(firstPick),
-        'keeps an assigned POTD after it is solved'
+        CFdaily.problemKey(CFdaily.getDailyProblem(
+            problems,
+            800,
+            '2026-08-10',
+            solved,
+            CFdaily.problemKey(firstPick)
+        )),
+        CFdaily.problemKey(firstPick)
     );
-
     assert.notEqual(
         CFdaily.assignmentStorageKey('Tourist', 800, '2026-08-10'),
-        CFdaily.assignmentStorageKey('Tourist', 900, '2026-08-10'),
-        'ratings have independent assignments'
+        CFdaily.assignmentStorageKey('Tourist', 900, '2026-08-10')
     );
     assert.notEqual(
         CFdaily.assignmentStorageKey('Tourist', 800, '2026-08-10'),
-        CFdaily.assignmentStorageKey('Tourist', 800, '2026-08-11'),
-        'dates have independent assignments'
+        CFdaily.assignmentStorageKey('Tourist', 800, '2026-08-11')
     );
     assert.equal(
         CFdaily.assignmentStorageKey('Tourist', 800, '2026-08-10'),
-        CFdaily.assignmentStorageKey('tourist', 800, '2026-08-10'),
-        'handle casing cannot create duplicate assignments'
+        CFdaily.assignmentStorageKey('tourist', 800, '2026-08-10')
     );
-    assert.equal(CFdaily.pickDailyProblem(problems, 1000, '2026-08-10'), null, 'returns null for an empty rating');
+    assert.equal(CFdaily.pickDailyProblem(problems, 1000, '2026-08-10'), null);
     assert.deepEqual(CFdaily.ratings(), Array.from({ length: 28 }, (_, index) => 800 + index * 100));
+});
 
+test('only accepted submissions count as solved', async t => {
+    const originalFetch = global.fetch;
+    t.after(() => { global.fetch = originalFetch; });
     global.fetch = async () => ({
         ok: true,
         json: async () => ({
@@ -63,13 +58,6 @@ async function run() {
             ]
         })
     });
-    const acceptedProblems = await CFdaily.fetchSolvedProblemKeys('test-handle');
-    assert.deepEqual([...acceptedProblems], ['1-A'], 'only accepted submissions count as solved');
 
-    console.log('POTD selection tests passed');
-}
-
-run().catch(error => {
-    console.error(error);
-    process.exitCode = 1;
+    assert.deepEqual([...await CFdaily.fetchSolvedProblemKeys('test-handle')], ['1-A']);
 });
