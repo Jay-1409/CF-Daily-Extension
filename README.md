@@ -1,18 +1,66 @@
-
 # CF-Daily
-CF-Daily adds one personal Problem of the Day to the Codeforces problemset. Choose any official problem rating from 800 through 3500 in the extension popup, and the matching daily problem appears both in the popup and at the top of the problemset table.
 
-There is no global POTD. Each user, date, and rating has one persistent daily assignment. When you are signed in to Codeforces, accepted problems are removed before the assignment is created. Solving that problem marks it completed without replacing it until the next day, and assignments for other ratings remain independent.
+CF-Daily is a lightweight browser extension that gives you one personal Codeforces Problem of the Day for the rating you choose.
 
-## Local installation
+There is no global POTD. Every Codeforces rating from 800 through 3500 has an independent daily assignment, shown in the extension popup and at the top of the Codeforces problemset table.
 
-1. Open `chrome://extensions` and enable Developer mode.
-2. Choose **Load unpacked** and select this repository.
-3. Visit the Codeforces problemset while signed in so CF-Daily can detect your handle.
-4. Open the extension and select the rating you want.
+## Features
 
+- Choose an exact Codeforces problem rating from 800 to 3500.
+- Receive one fixed problem per Codeforces handle, date, and rating.
+- Exclude previously accepted problems before a new daily assignment is created.
+- Keep the same POTD after solving it instead of generating another problem that day.
+- See completed POTDs clearly marked in the popup and problemset table.
+- Switch ratings without changing or completing assignments for other ratings.
+- Keep assignments and preferences locally in browser storage.
 
-## 🔗 Links
-[![google chrome](https://img.shields.io/badge/Google%20Chrome-Click%20here%20to%20download-red)](https://chrome.google.com/webstore/detail/cf-daily/nfkiibjkhejloohngppadofkbjfindia)
+## How daily assignments work
 
-[![mozilla firefox](https://img.shields.io/badge/Mozilla%20Firefox-Click%20here%20to%20download-green)](https://addons.mozilla.org/en-US/firefox/addon/cf-daily/)
+The first time you select a rating on a given day, CF-Daily loads the Codeforces problemset and your accepted submissions. It selects an unsolved problem at the exact chosen rating and saves its contest and problem ID using this combination:
+
+```text
+Codeforces handle + local date + rating
+```
+
+Every later visit that day uses the saved assignment. If you solve it, the extension marks it as completed and continues showing the same problem until the date changes. Each rating has its own independent assignment.
+
+## Codeforces account detection
+
+CF-Daily does not have a separate sign-in form and never asks for Codeforces credentials. Visit the [Codeforces problemset](https://codeforces.com/problemset) while signed in, and the extension detects the handle from the page. It then uses the public Codeforces API to identify accepted submissions.
+
+The extension still works without a detected handle, but it cannot exclude problems previously solved by an unknown user.
+
+## Install from source
+
+### Chrome, Edge, or Brave
+
+1. Download or clone this repository.
+2. Open the browser's extensions page, such as `chrome://extensions`.
+3. Enable **Developer mode**.
+4. Select **Load unpacked**.
+5. Choose the repository folder containing `manifest.json`.
+6. Visit the Codeforces problemset once, then open CF-Daily and choose a rating.
+
+### Firefox
+
+1. Open `about:debugging#/runtime/this-firefox`.
+2. Select **Load Temporary Add-on**.
+3. Choose `manifest.json` from this repository.
+
+Temporary Firefox add-ons must be loaded again after restarting the browser.
+
+## Development
+
+CF-Daily is a Manifest V3 extension built with plain HTML, CSS, and JavaScript. It does not require a compilation step or production dependencies.
+
+Run the selection and persistence tests with:
+
+```bash
+node tests/potd.test.js
+```
+
+The main extension files are:
+
+- `src/potd.js` — rating normalization, Codeforces API access, solved-problem filtering, and deterministic selection.
+- `src/popup.js` — popup state, rating selection, persistent assignments, and completion display.
+- `src/script.js` — Codeforces account detection and problemset-table integration.

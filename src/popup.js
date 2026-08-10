@@ -115,7 +115,7 @@ async function initialise() {
 
     userNote.textContent = handle === 'Enter'
         ? 'Sign in on Codeforces to exclude solved problems.'
-        : `Excluding problems solved by ${handle}.`;
+        : 'Accepted Codeforces submissions are excluded.';
 
     await loadProblem();
 }

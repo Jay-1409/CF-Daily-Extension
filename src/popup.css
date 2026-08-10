@@ -145,21 +145,3 @@ select:focus {
     line-height: 1.35;
     text-align: center;
 }
-
-footer {
-    margin-top: 14px;
-    padding-top: 10px;
-    border-top: 1px solid #eceff2;
-    color: #92979e;
-    font-size: 10px;
-    text-align: center;
-}
-
-footer a {
-    color: #6b7280;
-    text-decoration: none;
-}
-
-footer a:hover {
-    color: #ff4155;
-}
