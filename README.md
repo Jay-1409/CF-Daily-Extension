@@ -11,6 +11,8 @@ There is no global POTD. Every Codeforces rating from 800 through 3500 has an in
 - Exclude previously accepted problems before a new daily assignment is created.
 - Keep the same POTD after solving it instead of generating another problem that day.
 - See completed POTDs clearly marked in the popup and problemset table.
+- View a 365-day activity heatmap on your Codeforces profile.
+- Switch between a combined heatmap and an independent heatmap for every rating.
 - Switch ratings without changing or completing assignments for other ratings.
 - Keep assignments and preferences locally in browser storage.
 
@@ -33,6 +35,12 @@ Codeforces handle + local date + rating
 ```
 
 Every later visit that day uses the saved assignment. If you solve it, the extension marks it as completed and continues showing the same problem until the date changes. Each rating has its own independent assignment.
+
+## Activity heatmaps
+
+Open your own Codeforces profile to see the **CF-Daily Activity** panel. The combined view counts every completed rating-specific POTD for each day, while the selector provides a separate view for every rating from 800 through 3500.
+
+Completion records are currently stored only in `chrome.storage.local`. The profile page backfills missing records by comparing locally saved assignments with accepted Codeforces submissions, so assignments completed before the heatmap update can still appear.
 
 ## Codeforces account detection
 
@@ -72,7 +80,7 @@ node --test
 Create a Chrome Web Store ZIP directly from the canonical extension tree:
 
 ```bash
-zip -r ../CF-Daily-Web-Store-v1.3.2.zip manifest.json src icons LICENSE -x '*.DS_Store'
+zip -r ../CF-Daily-Web-Store-v1.4.0.zip manifest.json src icons LICENSE -x '*.DS_Store'
 ```
 
 The main extension files are:
@@ -80,3 +88,4 @@ The main extension files are:
 - `src/potd.js` — rating normalization, Codeforces API access, solved-problem filtering, and deterministic selection.
 - `src/popup.js` — popup state, rating selection, persistent assignments, and completion display.
 - `src/script.js` — Codeforces account detection and problemset-table integration.
+- `src/profile.js` — local completion backfilling and combined/rating-specific profile heatmaps.

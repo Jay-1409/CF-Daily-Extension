@@ -41,11 +41,19 @@ test('daily assignments are stable, unsolved, and isolated', () => {
         CFdaily.assignmentStorageKey('Tourist', 800, '2026-08-10'),
         CFdaily.assignmentStorageKey('tourist', 800, '2026-08-10')
     );
+    assert.notEqual(
+        CFdaily.completionStorageKey('Tourist', 800, '2026-08-10'),
+        CFdaily.completionStorageKey('Tourist', 900, '2026-08-10')
+    );
+    assert.equal(
+        CFdaily.completionStorageKey('Tourist', 800, '2026-08-10'),
+        'potdCompletion:tourist:2026-08-10:800'
+    );
     assert.equal(CFdaily.pickDailyProblem(problems, 1000, '2026-08-10'), null);
     assert.deepEqual(CFdaily.ratings(), Array.from({ length: 28 }, (_, index) => 800 + index * 100));
 });
 
-test('only accepted submissions count as solved', async t => {
+test('accepted submissions retain their earliest completion time', async t => {
     const originalFetch = global.fetch;
     t.after(() => { global.fetch = originalFetch; });
     global.fetch = async () => ({
@@ -53,11 +61,15 @@ test('only accepted submissions count as solved', async t => {
         json: async () => ({
             status: 'OK',
             result: [
-                { verdict: 'OK', problem: problems[0] },
+                { verdict: 'OK', creationTimeSeconds: 20, problem: problems[0] },
+                { verdict: 'OK', creationTimeSeconds: 10, problem: problems[0] },
                 { verdict: 'WRONG_ANSWER', problem: problems[1] }
             ]
         })
     });
 
-    assert.deepEqual([...await CFdaily.fetchSolvedProblemKeys('test-handle')], ['1-A']);
+    assert.deepEqual(
+        [...await CFdaily.fetchAcceptedSubmissions('test-handle')],
+        [['1-A', 10]]
+    );
 });

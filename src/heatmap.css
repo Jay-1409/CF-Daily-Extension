@@ -1,0 +1,94 @@
+.cf-daily-activity {
+    clear: both;
+    margin: 1.5em 0;
+    padding: 1.25em;
+    overflow: hidden;
+}
+
+.cf-daily-activity-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1em;
+}
+
+.cf-daily-activity h3,
+.cf-daily-activity p {
+    margin: 0;
+}
+
+.cf-daily-activity h3 {
+    font-size: 1.25em;
+}
+
+.cf-daily-activity-toolbar p,
+.cf-daily-activity-summary {
+    margin-top: 0.3em;
+    color: #777;
+}
+
+.cf-daily-activity select {
+    min-width: 150px;
+    padding: 0.45em 0.65em;
+    border: 1px solid #b9b9b9;
+    border-radius: 4px;
+    background: inherit;
+    color: inherit;
+}
+
+.cf-daily-activity-summary {
+    font-size: 0.9em;
+}
+
+.cf-daily-heatmap-grid {
+    display: grid;
+    grid-template-rows: repeat(7, 11px);
+    grid-auto-flow: column;
+    grid-auto-columns: 11px;
+    gap: 3px;
+    width: max-content;
+    min-width: 100%;
+    margin-top: 1em;
+}
+
+.cf-daily-heatmap-cell,
+.cf-daily-heatmap-spacer {
+    display: block;
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+}
+
+.cf-daily-heatmap-cell {
+    outline: 1px solid rgb(27 31 35 / 6%);
+}
+
+.cf-daily-heatmap-cell.level-0 { background: #ebedf0; }
+.cf-daily-heatmap-cell.level-1 { background: #9be9a8; }
+.cf-daily-heatmap-cell.level-2 { background: #40c463; }
+.cf-daily-heatmap-cell.level-3 { background: #30a14e; }
+.cf-daily-heatmap-cell.level-4 { background: #216e39; }
+
+.cf-daily-heatmap-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    margin-top: 0.8em;
+    color: #777;
+    font-size: 0.8em;
+}
+
+@media (max-width: 700px) {
+    .cf-daily-activity-toolbar {
+        flex-direction: column;
+    }
+
+    .cf-daily-heatmap-grid {
+        min-width: 740px;
+    }
+
+    .cf-daily-activity {
+        overflow-x: auto;
+    }
+}

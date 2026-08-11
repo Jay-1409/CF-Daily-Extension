@@ -12,7 +12,7 @@
     let renderVersion = 0;
     let currentHandle = 'Enter';
     let problemsetPromise;
-    let solvedProblemsPromise;
+    let acceptedSubmissionsPromise;
 
     function detectHandle() {
         const profileLink = document.querySelector('.lang-chooser a[href*="/profile/"]');
@@ -120,23 +120,24 @@
 
         try {
             problemsetPromise ||= CFDaily.fetchProblemset();
-            solvedProblemsPromise ||= CFDaily.fetchSolvedProblemKeys(currentHandle);
+            acceptedSubmissionsPromise ||= CFDaily.fetchAcceptedSubmissions(currentHandle);
 
-            const [{ problems, statistics }, solvedProblems] = await Promise.all([
+            const [{ problems, statistics }, acceptedSubmissions] = await Promise.all([
                 problemsetPromise,
-                solvedProblemsPromise
+                acceptedSubmissionsPromise
             ]);
             if (version !== renderVersion) return;
 
             const day = CFDaily.dateKey();
             const assignmentKey = CFDaily.assignmentStorageKey(currentHandle, rating, day);
-            const assignment = await chrome.storage.local.get(assignmentKey);
+            const completionKey = CFDaily.completionStorageKey(currentHandle, rating, day);
+            const stored = await chrome.storage.local.get([assignmentKey, completionKey]);
             const problem = CFDaily.getDailyProblem(
                 problems,
                 rating,
                 day,
-                solvedProblems,
-                assignment[assignmentKey]
+                acceptedSubmissions,
+                stored[assignmentKey]
             );
 
             if (!problem) {
@@ -145,20 +146,26 @@
             }
 
             const selectedProblemKey = CFDaily.problemKey(problem);
-            if (assignment[assignmentKey] !== selectedProblemKey) {
+            if (stored[assignmentKey] !== selectedProblemKey) {
                 await chrome.storage.local.set({ [assignmentKey]: selectedProblemKey });
+            }
+            const completedAt = acceptedSubmissions.get(selectedProblemKey);
+            if (completedAt !== undefined && !stored[completionKey]) {
+                await chrome.storage.local.set({
+                    [completionKey]: { problemKey: selectedProblemKey, completedAt }
+                });
             }
             if (version !== renderVersion) return;
 
             renderProblem(
                 problem,
                 statistics.get(selectedProblemKey),
-                solvedProblems.has(selectedProblemKey)
+                completedAt !== undefined
             );
         } catch (error) {
             console.error(error);
             problemsetPromise = undefined;
-            solvedProblemsPromise = undefined;
+            acceptedSubmissionsPromise = undefined;
             if (version === renderVersion) {
                 renderMessage(`POTD · ${rating}`, 'Could not load the Codeforces POTD.');
             }

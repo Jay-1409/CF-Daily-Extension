@@ -30,9 +30,25 @@
         return `${problem.contestId}-${problem.index}`;
     }
 
-    function assignmentStorageKey(handle, rating, day = dateKey()) {
+    function storageOwner(handle) {
         const owner = handle && handle !== 'Enter' ? handle.toLowerCase() : 'guest';
-        return `potdAssignment:${encodeURIComponent(owner)}:${day}:${normalizeRating(rating)}`;
+        return encodeURIComponent(owner);
+    }
+
+    function assignmentStoragePrefix(handle) {
+        return `potdAssignment:${storageOwner(handle)}:`;
+    }
+
+    function assignmentStorageKey(handle, rating, day = dateKey()) {
+        return `${assignmentStoragePrefix(handle)}${day}:${normalizeRating(rating)}`;
+    }
+
+    function completionStoragePrefix(handle) {
+        return `potdCompletion:${storageOwner(handle)}:`;
+    }
+
+    function completionStorageKey(handle, rating, day = dateKey()) {
+        return `${completionStoragePrefix(handle)}${day}:${normalizeRating(rating)}`;
     }
 
     // FNV-1a gives every problem a stable daily rank without relying on API order.
@@ -99,28 +115,35 @@
         return { problems: result.problems, statistics };
     }
 
-    async function fetchSolvedProblemKeys(handle) {
-        if (!handle || handle === 'Enter') return new Set();
+    async function fetchAcceptedSubmissions(handle) {
+        if (!handle || handle === 'Enter') return new Map();
 
         const submissions = await fetchApi(`user.status?handle=${encodeURIComponent(handle)}`);
-        const solved = new Set();
+        const accepted = new Map();
 
         for (const submission of submissions) {
             if (submission.verdict === 'OK' && submission.problem) {
-                solved.add(problemKey(submission.problem));
+                const key = problemKey(submission.problem);
+                const completedAt = submission.creationTimeSeconds || 0;
+                if (!accepted.has(key) || completedAt < accepted.get(key)) {
+                    accepted.set(key, completedAt);
+                }
             }
         }
 
-        return solved;
+        return accepted;
     }
 
     const api = {
         DEFAULT_RATING,
+        assignmentStoragePrefix,
         assignmentStorageKey,
+        completionStoragePrefix,
+        completionStorageKey,
         dateKey,
+        fetchAcceptedSubmissions,
         fetchApi,
         fetchProblemset,
-        fetchSolvedProblemKeys,
         getDailyProblem,
         normalizeRating,
         pickDailyProblem,

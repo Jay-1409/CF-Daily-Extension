@@ -5,7 +5,7 @@ const userNote = document.getElementById('userNote');
 let handle = 'Enter';
 let loadVersion = 0;
 let problemsetPromise;
-let solvedProblemsPromise;
+let acceptedSubmissionsPromise;
 
 function setStatus(message) {
     output.replaceChildren();
@@ -52,23 +52,24 @@ async function loadProblem() {
 
     try {
         problemsetPromise ||= CFDaily.fetchProblemset();
-        solvedProblemsPromise ||= CFDaily.fetchSolvedProblemKeys(handle);
+        acceptedSubmissionsPromise ||= CFDaily.fetchAcceptedSubmissions(handle);
 
-        const [{ problems }, solvedProblems] = await Promise.all([
+        const [{ problems }, acceptedSubmissions] = await Promise.all([
             problemsetPromise,
-            solvedProblemsPromise
+            acceptedSubmissionsPromise
         ]);
         if (version !== loadVersion) return;
 
         const day = CFDaily.dateKey();
         const assignmentKey = CFDaily.assignmentStorageKey(handle, rating, day);
-        const assignment = await chrome.storage.local.get(assignmentKey);
+        const completionKey = CFDaily.completionStorageKey(handle, rating, day);
+        const stored = await chrome.storage.local.get([assignmentKey, completionKey]);
         const problem = CFDaily.getDailyProblem(
             problems,
             rating,
             day,
-            solvedProblems,
-            assignment[assignmentKey]
+            acceptedSubmissions,
+            stored[assignmentKey]
         );
 
         if (!problem) {
@@ -77,16 +78,22 @@ async function loadProblem() {
         }
 
         const selectedProblemKey = CFDaily.problemKey(problem);
-        if (assignment[assignmentKey] !== selectedProblemKey) {
+        if (stored[assignmentKey] !== selectedProblemKey) {
             await chrome.storage.local.set({ [assignmentKey]: selectedProblemKey });
+        }
+        const completedAt = acceptedSubmissions.get(selectedProblemKey);
+        if (completedAt !== undefined && !stored[completionKey]) {
+            await chrome.storage.local.set({
+                [completionKey]: { problemKey: selectedProblemKey, completedAt }
+            });
         }
         if (version !== loadVersion) return;
 
-        renderProblem(problem, solvedProblems.has(selectedProblemKey));
+        renderProblem(problem, completedAt !== undefined);
     } catch (error) {
         console.error(error);
         problemsetPromise = undefined;
-        solvedProblemsPromise = undefined;
+        acceptedSubmissionsPromise = undefined;
         if (version === loadVersion) setStatus('Could not load Codeforces. Please try again.');
     }
 }
