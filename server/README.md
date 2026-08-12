@@ -1,17 +1,16 @@
 # CF-Daily server
 
-Authenticated Express API for Firebase Authentication, Firestore activity storage, streak calculations, and the current-streak leaderboard.
+Authenticated Express API for Supabase Auth, Postgres activity storage, streak calculations, and the current-streak leaderboard.
 
-## Firestore model
+## Postgres model
 
 ```text
-users/{uid}
-  displayName, email, photoURL
-  currentStreak, longestStreak, totalActiveDays, totalCompletions
+profiles
+  id, display_name, photo_url
+  current_streak, longest_streak, total_active_days, total_completions
 
-users/{uid}/activity/{YYYY-MM-DD}
-  ratings.{rating}.problemKey
-  ratings.{rating}.completedAt
+activity
+  user_id, day, rating, problem_key, completed_at
 ```
 
 One active UTC day contributes one day to a streak, regardless of how many rating-specific POTDs the user completes on that day. The leaderboard sorts by current streak, longest streak, total completions, then display name.
@@ -25,6 +24,6 @@ npm test
 npm start
 ```
 
-The Firebase Admin SDK uses the three service-account variables in `.env` when present, otherwise Application Default Credentials. Never commit `.env` or a service-account JSON key.
+Run `../supabase/migrations/001_initial.sql` in the Supabase SQL editor before starting the API. The secret key belongs only in the server environment; never commit it or expose it to the extension. The publishable key is safe to copy into `src/config.js`.
 
-The extension must provide a Firebase ID token in `Authorization: Bearer <token>`. Firestore access from clients is disabled; all reads and writes go through this server.
+The extension provides a Supabase access token in `Authorization: Bearer <token>`. Row-level security prevents direct cross-user reads, while all writes and leaderboard reads go through this server.

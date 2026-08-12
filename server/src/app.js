@@ -1,5 +1,5 @@
 import express from 'express';
-import { auth } from './firebase.js';
+import { supabase } from './supabase.js';
 import { getLeaderboard, getUserData, syncActivity, syncUser } from './activity.js';
 
 export const app = express();
@@ -22,10 +22,12 @@ async function requireAuth(request, response, next) {
     if (!match) return response.status(401).json({ error: 'Authentication required' });
 
     try {
-        request.user = await auth.verifyIdToken(match[1]);
+        const { data, error } = await supabase.auth.getUser(match[1]);
+        if (error || !data.user) throw error || new Error('User not found');
+        request.user = data.user;
         next();
     } catch {
-        response.status(401).json({ error: 'Invalid or expired Firebase token' });
+        response.status(401).json({ error: 'Invalid or expired Supabase token' });
     }
 }
 
@@ -34,7 +36,7 @@ app.get('/health', (request, response) => response.json({ ok: true }));
 app.post('/api/session', requireAuth, async (request, response, next) => {
     try {
         await syncUser(request.user);
-        response.json(await getUserData(request.user.uid));
+        response.json(await getUserData(request.user.id));
     } catch (error) {
         next(error);
     }
@@ -43,7 +45,7 @@ app.post('/api/session', requireAuth, async (request, response, next) => {
 app.get('/api/me', requireAuth, async (request, response, next) => {
     try {
         await syncUser(request.user);
-        response.json(await getUserData(request.user.uid));
+        response.json(await getUserData(request.user.id));
     } catch (error) {
         next(error);
     }

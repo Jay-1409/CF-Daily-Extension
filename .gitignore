@@ -1,5 +1,4 @@
 server/node_modules/
 server/package-lock.json
 server/.env
-.firebaserc
-firebase-debug.log
+supabase/.temp/

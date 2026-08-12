@@ -12,7 +12,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "express": "5.2.1",
-    "firebase-admin": "14.2.0"
+    "@supabase/supabase-js": "2.112.3",
+    "express": "5.2.1"
   }
 }

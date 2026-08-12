@@ -1,6 +1,5 @@
-import { FieldValue } from 'firebase-admin/firestore';
-import { db } from './firebase.js';
-import { calculateStreaks, utcDay } from './streaks.js';
+import { supabase } from './supabase.js';
+import { utcDay } from './streaks.js';
 
 const RATINGS = new Set(Array.from({ length: 28 }, (_, index) => 800 + index * 100));
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -24,117 +23,73 @@ function validateCompletion(completion) {
         throw new Error('Completion timestamp must be inside its UTC day');
     }
 
-    return { day, rating, problemKey, completedAt };
+    return { day, rating, problem_key: problemKey, completed_at: completedAt };
 }
 
-function publicUser(user) {
+function publicUser(profile) {
     const today = utcDay();
-    const currentStreak = user.lastActiveDay && (
-        user.lastActiveDay === today
-        || Date.parse(`${today}T00:00:00Z`) - Date.parse(`${user.lastActiveDay}T00:00:00Z`) === 86_400_000
-    ) ? user.currentStreak || 0 : 0;
+    const currentStreak = profile.last_active_day && (
+        profile.last_active_day === today
+        || Date.parse(`${today}T00:00:00Z`) - Date.parse(`${profile.last_active_day}T00:00:00Z`) === 86_400_000
+    ) ? profile.current_streak || 0 : 0;
+
     return {
-        uid: user.uid,
-        displayName: user.displayName || 'CF-Daily user',
-        photoURL: user.photoURL || null,
+        uid: profile.id,
+        displayName: profile.display_name || 'CF-Daily user',
+        photoURL: profile.photo_url || null,
         currentStreak,
-        longestStreak: user.longestStreak || 0,
-        totalActiveDays: user.totalActiveDays || 0,
-        totalCompletions: user.totalCompletions || 0
+        longestStreak: profile.longest_streak || 0,
+        totalActiveDays: profile.total_active_days || 0,
+        totalCompletions: profile.total_completions || 0
     };
 }
 
-export async function syncUser(decodedToken) {
-    const ref = db.collection('users').doc(decodedToken.uid);
-    const snapshot = await ref.get();
-    await ref.set({
-        uid: decodedToken.uid,
-        displayName: decodedToken.name || decodedToken.email?.split('@')[0] || 'CF-Daily user',
-        email: decodedToken.email || null,
-        photoURL: decodedToken.picture || null,
-        ...snapshot.exists ? {} : {
-            currentStreak: 0,
-            longestStreak: 0,
-            totalActiveDays: 0,
-            totalCompletions: 0,
-            lastActiveDay: null
-        },
-        updatedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
-    return ref;
+function check(result) {
+    if (result.error) throw result.error;
+    return result.data;
 }
 
-export async function syncActivity(decodedToken, input) {
+export async function syncUser(user) {
+    check(await supabase.from('profiles').upsert({
+        id: user.id,
+        display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'CF-Daily user',
+        photo_url: user.user_metadata?.avatar_url || null,
+        updated_at: new Date().toISOString()
+    }, { onConflict: 'id' }));
+}
+
+export async function syncActivity(user, input) {
     const completions = input.map(validateCompletion);
     if (completions.length > 500) throw new Error('A maximum of 500 completions can be synced');
 
-    const userRef = await syncUser(decodedToken);
-    await db.runTransaction(async transaction => {
-        const snapshot = await transaction.get(userRef.collection('activity'));
-        const activity = new Map(snapshot.docs.map(doc => [doc.id, doc.data().ratings || {}]));
-
-        const changedDays = new Set();
-        for (const completion of completions) {
-            const ratings = activity.get(completion.day) || {};
-            const key = String(completion.rating);
-            const existing = ratings[key];
-            if (!existing || completion.completedAt < existing.completedAt) {
-                ratings[key] = {
-                    problemKey: completion.problemKey,
-                    completedAt: completion.completedAt
-                };
-            }
-            activity.set(completion.day, ratings);
-            changedDays.add(completion.day);
-        }
-
-        for (const day of changedDays) {
-            const ratings = activity.get(day);
-            transaction.set(userRef.collection('activity').doc(day), {
-                day,
-                ratings,
-                updatedAt: FieldValue.serverTimestamp()
-            });
-        }
-
-        const stats = calculateStreaks([...activity.keys()]);
-        const lastActiveDay = [...activity.keys()].sort().at(-1) || null;
-        const totalCompletions = [...activity.values()]
-            .reduce((total, ratings) => total + Object.keys(ratings).length, 0);
-        transaction.set(userRef, {
-            ...stats,
-            lastActiveDay,
-            totalCompletions,
-            updatedAt: FieldValue.serverTimestamp()
-        }, { merge: true });
-    });
-
-    return getUserData(decodedToken.uid);
+    await syncUser(user);
+    check(await supabase.rpc('sync_activity', {
+        p_user_id: user.id,
+        p_completions: completions
+    }));
+    return getUserData(user.id);
 }
 
 export async function getUserData(uid) {
-    const userRef = db.collection('users').doc(uid);
-    const [userSnapshot, activitySnapshot] = await Promise.all([
-        userRef.get(),
-        userRef.collection('activity').orderBy('__name__', 'asc').get()
+    const [profileResult, activityResult] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', uid).single(),
+        supabase.from('activity').select('day, rating, problem_key, completed_at')
+            .eq('user_id', uid).order('day', { ascending: true })
     ]);
-    const user = userSnapshot.data() || { uid };
-    const activity = [];
-
-    for (const document of activitySnapshot.docs) {
-        const data = document.data();
-        for (const [rating, completion] of Object.entries(data.ratings || {})) {
-            activity.push({ day: data.day || document.id, rating: Number(rating), ...completion });
-        }
-    }
-
-    return { user: publicUser(user), activity };
+    const profile = check(profileResult);
+    const activity = check(activityResult).map(completion => ({
+        day: completion.day,
+        rating: completion.rating,
+        problemKey: completion.problem_key,
+        completedAt: completion.completed_at
+    }));
+    return { user: publicUser(profile), activity };
 }
 
 export async function getLeaderboard(limit = 10) {
-    const snapshot = await db.collection('users').get();
-    return snapshot.docs
-        .map(document => publicUser(document.data()))
+    const profiles = check(await supabase.from('profiles').select('*'));
+    return profiles
+        .map(publicUser)
         .sort((left, right) => (
             right.currentStreak - left.currentStreak
             || right.longestStreak - left.longestStreak
