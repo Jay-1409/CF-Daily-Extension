@@ -9,6 +9,11 @@
     background: #f4fbf6;
 }
 
+#cf-daily-potd.cf-daily-previously-solved {
+    border-left-color: #b7791f;
+    background: #fffbef;
+}
+
 #cf-daily-potd > td:first-child {
     font-weight: 700;
     white-space: nowrap;
@@ -31,6 +36,11 @@
     color: #216e39;
     font-size: 0.75em;
     font-weight: 700;
+}
+
+#cf-daily-potd.cf-daily-previously-solved .cf-daily-status {
+    background: #f8e7b0;
+    color: #7a4b00;
 }
 
 #cf-daily-potd .cf-daily-solved {

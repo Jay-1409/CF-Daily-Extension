@@ -24,7 +24,7 @@
 
     function renderMessage(label, message) {
         potdRow.replaceChildren();
-        potdRow.classList.remove('cf-daily-completed');
+        potdRow.classList.remove('cf-daily-completed', 'cf-daily-previously-solved');
 
         const labelCell = potdRow.insertCell();
         const messageCell = potdRow.insertCell();
@@ -42,9 +42,14 @@
         return link;
     }
 
-    function renderProblem(problem, statistics, isCompleted) {
+    function renderProblem(problem, statistics, submission) {
+        const isCompleted = submission.completedAt !== undefined;
         potdRow.replaceChildren();
         potdRow.classList.toggle('cf-daily-completed', isCompleted);
+        potdRow.classList.toggle(
+            'cf-daily-previously-solved',
+            !isCompleted && submission.solvedBefore
+        );
 
         const idCell = potdRow.insertCell();
         const nameCell = potdRow.insertCell();
@@ -58,10 +63,10 @@
         const name = document.createElement('div');
         appendLink(name, problemPath, problem.name);
 
-        if (isCompleted) {
+        if (isCompleted || submission.solvedBefore) {
             const completed = document.createElement('span');
             completed.className = 'cf-daily-status';
-            completed.textContent = 'Completed';
+            completed.textContent = isCompleted ? 'Completed today' : 'Solved before · Reattempt';
             name.append(' ', completed);
         }
 
@@ -129,19 +134,18 @@
             if (version !== renderVersion) return;
 
             const day = CFDaily.dateKey();
-            const assignmentKey = CFDaily.assignmentStorageKey(currentHandle, rating, day);
+            const assignmentKey = CFDaily.assignmentStorageKey(rating, day);
             const completionKey = CFDaily.completionStorageKey(currentHandle, rating, day);
             const stored = await chrome.storage.local.get([assignmentKey, completionKey]);
             const problem = CFDaily.getDailyProblem(
                 problems,
                 rating,
                 day,
-                acceptedSubmissions,
                 stored[assignmentKey]
             );
 
             if (!problem) {
-                renderMessage(`POTD · ${rating}`, `No unsolved ${rating} problem is available.`);
+                renderMessage(`POTD · ${rating}`, `No ${rating} problem is available.`);
                 return;
             }
 
@@ -149,10 +153,17 @@
             if (stored[assignmentKey] !== selectedProblemKey) {
                 await chrome.storage.local.set({ [assignmentKey]: selectedProblemKey });
             }
-            const completedAt = acceptedSubmissions.get(selectedProblemKey);
-            if (completedAt !== undefined && !stored[completionKey]) {
+            const submission = CFDaily.submissionStatus(
+                acceptedSubmissions,
+                selectedProblemKey,
+                day
+            );
+            if (submission.completedAt !== undefined && !stored[completionKey]) {
                 await chrome.storage.local.set({
-                    [completionKey]: { problemKey: selectedProblemKey, completedAt }
+                    [completionKey]: {
+                        problemKey: selectedProblemKey,
+                        completedAt: submission.completedAt
+                    }
                 });
             }
             if (version !== renderVersion) return;
@@ -160,7 +171,7 @@
             renderProblem(
                 problem,
                 statistics.get(selectedProblemKey),
-                completedAt !== undefined
+                submission
             );
         } catch (error) {
             console.error(error);

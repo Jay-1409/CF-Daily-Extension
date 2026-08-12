@@ -20,9 +20,9 @@
     }
 
     function dateKey(date = new Date()) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(date.getUTCDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     }
 
@@ -35,12 +35,12 @@
         return encodeURIComponent(owner);
     }
 
-    function assignmentStoragePrefix(handle) {
-        return `potdAssignment:${storageOwner(handle)}:`;
+    function assignmentStoragePrefix() {
+        return 'potdAssignment:global:';
     }
 
-    function assignmentStorageKey(handle, rating, day = dateKey()) {
-        return `${assignmentStoragePrefix(handle)}${day}:${normalizeRating(rating)}`;
+    function assignmentStorageKey(rating, day = dateKey()) {
+        return `${assignmentStoragePrefix()}${day}:${normalizeRating(rating)}`;
     }
 
     function completionStoragePrefix(handle) {
@@ -61,7 +61,7 @@
         return result >>> 0;
     }
 
-    function pickDailyProblem(problems, rating, day = dateKey(), solvedKeys = new Set()) {
+    function pickDailyProblem(problems, rating, day = dateKey()) {
         const normalizedRating = normalizeRating(rating);
         let selected = null;
         let selectedScore = Number.POSITIVE_INFINITY;
@@ -71,8 +71,6 @@
             if (!problem.contestId || !problem.index || problem.rating !== normalizedRating) continue;
 
             const key = problemKey(problem);
-            if (solvedKeys.has(key)) continue;
-
             const score = hash(`${day}:${normalizedRating}:${key}`);
             if (score < selectedScore || (score === selectedScore && key < selectedKey)) {
                 selected = problem;
@@ -84,7 +82,7 @@
         return selected;
     }
 
-    function getDailyProblem(problems, rating, day = dateKey(), solvedKeys = new Set(), assignedKey) {
+    function getDailyProblem(problems, rating, day = dateKey(), assignedKey) {
         const normalizedRating = normalizeRating(rating);
 
         if (assignedKey) {
@@ -94,7 +92,7 @@
             if (assignedProblem) return assignedProblem;
         }
 
-        return pickDailyProblem(problems, normalizedRating, day, solvedKeys);
+        return pickDailyProblem(problems, normalizedRating, day);
     }
 
     async function fetchApi(path) {
@@ -125,17 +123,35 @@
             if (submission.verdict === 'OK' && submission.problem) {
                 const key = problemKey(submission.problem);
                 const completedAt = submission.creationTimeSeconds || 0;
-                if (!accepted.has(key) || completedAt < accepted.get(key)) {
-                    accepted.set(key, completedAt);
-                }
+                const timestamps = accepted.get(key) || [];
+                timestamps.push(completedAt);
+                accepted.set(key, timestamps);
             }
         }
 
+        for (const timestamps of accepted.values()) timestamps.sort((a, b) => a - b);
         return accepted;
+    }
+
+    function acceptedOnDay(acceptedSubmissions, key, day) {
+        return acceptedSubmissions.get(key)?.find(timestamp => (
+            dateKey(new Date(timestamp * 1000)) === day
+        ));
+    }
+
+    function submissionStatus(acceptedSubmissions, key, day = dateKey()) {
+        const timestamps = acceptedSubmissions.get(key) || [];
+        return {
+            completedAt: acceptedOnDay(acceptedSubmissions, key, day),
+            solvedBefore: timestamps.some(timestamp => (
+                dateKey(new Date(timestamp * 1000)) < day
+            ))
+        };
     }
 
     const api = {
         DEFAULT_RATING,
+        acceptedOnDay,
         assignmentStoragePrefix,
         assignmentStorageKey,
         completionStoragePrefix,
@@ -148,7 +164,8 @@
         normalizeRating,
         pickDailyProblem,
         problemKey,
-        ratings
+        ratings,
+        submissionStatus
     };
 
     root.CFDaily = api;

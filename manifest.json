@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "CF-Daily",
-    "version": "1.4.0",
-    "description": "A personal Codeforces Problem of the Day for the rating you choose",
+    "version": "1.5.0",
+    "description": "One shared Codeforces Problem of the Day for every rating",
     "content_scripts": [
         {
             "css": [

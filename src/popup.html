@@ -10,22 +10,38 @@
 
 <body>
     <main id="popupWindow">
-        <header id="icon">
-            <img src="../icons/icon48.png" alt="CF-Daily logo">
-            <div>
-                <h1>CF-Daily</h1>
-                <p>One problem. Your rating.</p>
+        <header class="app-header">
+            <div class="brand-mark">
+                <img src="../icons/icon48.png" alt="">
             </div>
+            <div class="brand-copy">
+                <h1>CF-Daily</h1>
+                <p>One focused problem, every day.</p>
+            </div>
+            <span class="daily-badge">Daily</span>
         </header>
 
-        <label for="ratingSelect">Problem rating</label>
-        <select id="ratingSelect" aria-label="Select a Codeforces problem rating"></select>
-
-        <section id="output" aria-live="polite">
-            <p class="status">Loading today's problem…</p>
+        <section class="rating-control" aria-labelledby="ratingLabel">
+            <div class="field-heading">
+                <label id="ratingLabel" for="ratingSelect">Choose your rating</label>
+                <span id="ratingHint">800–3500</span>
+            </div>
+            <div class="select-wrap">
+                <select id="ratingSelect" aria-describedby="ratingHint"></select>
+            </div>
         </section>
 
-        <p id="userNote"></p>
+        <section id="output" class="challenge-card" aria-live="polite" aria-busy="true">
+            <div class="loading-state">
+                <span class="spinner" aria-hidden="true"></span>
+                <p class="status">Loading today’s problem…</p>
+            </div>
+        </section>
+
+        <footer class="privacy-note">
+            <span class="status-dot" aria-hidden="true"></span>
+            <p id="userNote"></p>
+        </footer>
     </main>
 
     <script src="./potd.js"></script>

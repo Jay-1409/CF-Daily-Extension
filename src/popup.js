@@ -7,29 +7,45 @@ let loadVersion = 0;
 let problemsetPromise;
 let acceptedSubmissionsPromise;
 
-function setStatus(message) {
+function setStatus(message, isLoading = true) {
     output.replaceChildren();
-    output.classList.remove('completed');
+    output.classList.remove('completed', 'previously-solved');
+    output.setAttribute('aria-busy', String(isLoading));
+    const loading = document.createElement('div');
+    loading.className = 'loading-state';
     const status = document.createElement('p');
     status.className = 'status';
     status.textContent = message;
-    output.append(status);
+    if (isLoading) {
+        const spinner = document.createElement('span');
+        spinner.className = 'spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+        loading.append(spinner);
+    }
+    loading.append(status);
+    output.append(loading);
 }
 
-function renderProblem(problem, isCompleted) {
+function renderProblem(problem, submission) {
+    const isCompleted = submission.completedAt !== undefined;
     output.replaceChildren();
     output.classList.toggle('completed', isCompleted);
+    output.classList.toggle('previously-solved', !isCompleted && submission.solvedBefore);
+    output.setAttribute('aria-busy', 'false');
 
     const eyebrow = document.createElement('p');
     eyebrow.className = 'eyebrow';
     eyebrow.textContent = isCompleted
-        ? `COMPLETED · ${problem.rating}`
-        : `TODAY · ${problem.rating}`;
+        ? `COMPLETED TODAY · ${problem.rating}`
+        : submission.solvedBefore
+            ? `SOLVED BEFORE · ${problem.rating}`
+            : `TODAY · ${problem.rating}`;
 
     const title = document.createElement('a');
     title.className = 'problem-title';
     title.href = `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`;
     title.target = '_blank';
+    title.rel = 'noreferrer';
     title.textContent = problem.name;
 
     const meta = document.createElement('p');
@@ -40,7 +56,10 @@ function renderProblem(problem, isCompleted) {
     solve.className = 'solve-button';
     solve.href = title.href;
     solve.target = '_blank';
-    solve.textContent = isCompleted ? 'View completed problem' : 'Solve on Codeforces';
+    solve.rel = 'noreferrer';
+    solve.textContent = isCompleted || submission.solvedBefore
+        ? 'Reattempt on Codeforces'
+        : 'Solve on Codeforces';
 
     output.append(eyebrow, title, meta, solve);
 }
@@ -61,19 +80,18 @@ async function loadProblem() {
         if (version !== loadVersion) return;
 
         const day = CFDaily.dateKey();
-        const assignmentKey = CFDaily.assignmentStorageKey(handle, rating, day);
+        const assignmentKey = CFDaily.assignmentStorageKey(rating, day);
         const completionKey = CFDaily.completionStorageKey(handle, rating, day);
         const stored = await chrome.storage.local.get([assignmentKey, completionKey]);
         const problem = CFDaily.getDailyProblem(
             problems,
             rating,
             day,
-            acceptedSubmissions,
             stored[assignmentKey]
         );
 
         if (!problem) {
-            setStatus(`No unsolved ${rating} problem is available.`);
+            setStatus(`No ${rating} problem is available.`, false);
             return;
         }
 
@@ -81,20 +99,29 @@ async function loadProblem() {
         if (stored[assignmentKey] !== selectedProblemKey) {
             await chrome.storage.local.set({ [assignmentKey]: selectedProblemKey });
         }
-        const completedAt = acceptedSubmissions.get(selectedProblemKey);
-        if (completedAt !== undefined && !stored[completionKey]) {
+        const submission = CFDaily.submissionStatus(
+            acceptedSubmissions,
+            selectedProblemKey,
+            day
+        );
+        if (submission.completedAt !== undefined && !stored[completionKey]) {
             await chrome.storage.local.set({
-                [completionKey]: { problemKey: selectedProblemKey, completedAt }
+                [completionKey]: {
+                    problemKey: selectedProblemKey,
+                    completedAt: submission.completedAt
+                }
             });
         }
         if (version !== loadVersion) return;
 
-        renderProblem(problem, completedAt !== undefined);
+        renderProblem(problem, submission);
     } catch (error) {
         console.error(error);
         problemsetPromise = undefined;
         acceptedSubmissionsPromise = undefined;
-        if (version === loadVersion) setStatus('Could not load Codeforces. Please try again.');
+        if (version === loadVersion) {
+            setStatus('Could not load Codeforces. Please try again.', false);
+        }
     }
 }
 
@@ -113,8 +140,8 @@ async function initialise() {
     await chrome.storage.local.set({ selectedRating });
 
     userNote.textContent = handle === 'Enter'
-        ? 'Sign in on Codeforces to exclude solved problems.'
-        : 'Accepted Codeforces submissions are excluded.';
+        ? 'Sign in to sync daily completions.'
+        : 'Today’s accepted submission updates your activity.';
 
     await loadProblem();
 }

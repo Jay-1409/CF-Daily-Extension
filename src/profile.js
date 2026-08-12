@@ -68,12 +68,12 @@
         function render(view) {
             grid.replaceChildren();
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            today.setUTCHours(0, 0, 0, 0);
             const firstDay = new Date(today);
-            firstDay.setDate(today.getDate() - 364);
+            firstDay.setUTCDate(today.getUTCDate() - 364);
             const visibleDays = new Set();
 
-            for (let index = 0; index < firstDay.getDay(); index += 1) {
+            for (let index = 0; index < firstDay.getUTCDay(); index += 1) {
                 const spacer = document.createElement('span');
                 spacer.className = 'cf-daily-heatmap-spacer';
                 grid.append(spacer);
@@ -87,7 +87,7 @@
 
             for (let offset = 0; offset < 365; offset += 1) {
                 const date = new Date(firstDay);
-                date.setDate(firstDay.getDate() + offset);
+                date.setUTCDate(firstDay.getUTCDate() + offset);
                 const day = CFDaily.dateKey(date);
                 const count = counts.get(day) || 0;
                 visibleDays.add(day);
@@ -96,7 +96,7 @@
                 const level = count === 0 ? 0 : view === 'combined' ? Math.min(4, count) : 4;
                 cell.className = `cf-daily-heatmap-cell level-${level}`;
                 const readableDate = date.toLocaleDateString(undefined, {
-                    day: 'numeric', month: 'short', year: 'numeric'
+                    day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'
                 });
                 cell.title = view === 'combined'
                     ? `${readableDate}: ${count} POTD${count === 1 ? '' : 's'} completed`
@@ -128,7 +128,7 @@
 
         await chrome.storage.local.set({ name: signedInHandle });
         const stored = await chrome.storage.local.get(null);
-        const assignmentPrefix = CFDaily.assignmentStoragePrefix(signedInHandle);
+        const assignmentPrefix = CFDaily.assignmentStoragePrefix();
         const completionPrefix = CFDaily.completionStoragePrefix(signedInHandle);
         const updates = {};
 
@@ -136,7 +136,10 @@
             const accepted = await CFDaily.fetchAcceptedSubmissions(signedInHandle);
             for (const [key, problem] of Object.entries(stored)) {
                 const assignment = parseDatedRatingKey(key, assignmentPrefix);
-                if (!assignment || !accepted.has(problem)) continue;
+                if (!assignment) continue;
+
+                const completedAt = CFDaily.acceptedOnDay(accepted, problem, assignment.day);
+                if (completedAt === undefined) continue;
 
                 const completionKey = CFDaily.completionStorageKey(
                     signedInHandle,
@@ -146,7 +149,7 @@
                 if (!stored[completionKey]) {
                     updates[completionKey] = {
                         problemKey: problem,
-                        completedAt: accepted.get(problem)
+                        completedAt
                     };
                 }
             }
