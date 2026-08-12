@@ -1,0 +1,18 @@
+{
+  "name": "cf-daily-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "5.2.1",
+    "firebase-admin": "14.2.0"
+  }
+}
