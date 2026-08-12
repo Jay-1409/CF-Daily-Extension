@@ -3,6 +3,7 @@ import { supabase } from './supabase.js';
 import { getLeaderboard, getUserData, syncActivity, syncUser } from './activity.js';
 
 export const app = express();
+export default app;
 
 app.use(express.json({ limit: '128kb' }));
 app.use((request, response, next) => {
