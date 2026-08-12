@@ -50,6 +50,7 @@
     "host_permissions": [
         "https://codeforces.com/*",
         "https://*.supabase.co/*",
+        "https://cf-daily-extension.vercel.app/*",
         "http://localhost:3000/*",
         "http://127.0.0.1:3000/*"
     ]

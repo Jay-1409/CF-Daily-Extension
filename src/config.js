@@ -1,7 +1,7 @@
-// Supabase project URLs and publishable keys identify your project; they are not secrets.
-// Replace these values before loading or packaging the extension.
+// These public values identify the deployed Supabase project and API.
+// Never place the Supabase secret key in the extension.
 globalThis.CFDailyConfig = Object.freeze({
-    supabaseUrl: '',
-    supabasePublishableKey: '',
-    apiBaseUrl: 'http://localhost:3000'
+    supabaseUrl: 'https://iqxrbmuxzyafckmejscz.supabase.co',
+    supabasePublishableKey: 'sb_publishable_p8WyklCNMKWwbrGxgtjp3A_yR-Z6MwB',
+    apiBaseUrl: 'https://cf-daily-extension.vercel.app'
 });
