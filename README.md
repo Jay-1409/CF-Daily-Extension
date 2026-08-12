@@ -1,14 +1,14 @@
 # CF-Daily
 
-CF-Daily is a lightweight browser extension that gives you one personal Codeforces Problem of the Day for the rating you choose.
+CF-Daily is a lightweight browser extension that gives everyone the same Codeforces Problem of the Day for the rating they choose.
 
-There is no global POTD. Every Codeforces rating from 800 through 3500 has an independent daily assignment, shown in the extension popup and at the top of the Codeforces problemset table.
+Every Codeforces rating from 800 through 3500 has one global daily assignment, shown in the extension popup and at the top of the Codeforces problemset table.
 
 ## Features
 
 - Choose an exact Codeforces problem rating from 800 to 3500.
-- Receive one fixed problem per Codeforces handle, date, and rating.
-- Exclude previously accepted problems before a new daily assignment is created.
+- Receive one globally consistent problem per UTC date and rating.
+- Reattempt the POTD even if you accepted it before it became the daily problem.
 - Keep the same POTD after solving it instead of generating another problem that day.
 - See completed POTDs clearly marked in the popup and problemset table.
 - View a 365-day activity heatmap on your Codeforces profile.
@@ -28,25 +28,25 @@ There is no global POTD. Every Codeforces rating from 800 through 3500 has an in
 
 ## How daily assignments work
 
-The first time you select a rating on a given day, CF-Daily loads the Codeforces problemset and your accepted submissions. It selects an unsolved problem at the exact chosen rating and saves its contest and problem ID using this combination:
+The first time any rating is selected on a given day, CF-Daily deterministically selects a problem at that exact rating and saves its contest and problem ID using this combination:
 
 ```text
-Codeforces handle + local date + rating
+UTC date + rating
 ```
 
-Every later visit that day uses the saved assignment. If you solve it, the extension marks it as completed and continues showing the same problem until the date changes. Each rating has its own independent assignment.
+The selection does not depend on the current user or their submission history, so everyone receives the same problem for that UTC date and rating. Every later visit that day uses the saved assignment. A previous acceptance is shown as **Solved before** but does not replace or complete the POTD; accepting it again during its assigned UTC day marks it as completed. Each rating has its own independent assignment.
 
 ## Activity heatmaps
 
 Open your own Codeforces profile to see the **CF-Daily Activity** panel. The combined view counts every completed rating-specific POTD for each day, while the selector provides a separate view for every rating from 800 through 3500.
 
-Completion records are currently stored only in `chrome.storage.local`. The profile page backfills missing records by comparing locally saved assignments with accepted Codeforces submissions, so assignments completed before the heatmap update can still appear.
+Completion records are currently stored only in `chrome.storage.local`. The profile page backfills missing records by matching locally saved assignments with accepted Codeforces submissions made on the corresponding POTD date.
 
 ## Codeforces account detection
 
-CF-Daily does not have a separate sign-in form and never asks for Codeforces credentials. Visit the [Codeforces problemset](https://codeforces.com/problemset) while signed in, and the extension detects the handle from the page. It then uses the public Codeforces API to identify accepted submissions.
+CF-Daily does not have a separate sign-in form and never asks for Codeforces credentials. Visit the [Codeforces problemset](https://codeforces.com/problemset) while signed in, and the extension detects the handle from the page. It then uses the public Codeforces API to track same-day accepted submissions for the activity heatmap.
 
-The extension still works without a detected handle, but it cannot exclude problems previously solved by an unknown user.
+The extension still assigns the same global POTD without a detected handle, but completion tracking requires a Codeforces account.
 
 ## Install from source
 
@@ -80,12 +80,12 @@ node --test
 Create a Chrome Web Store ZIP directly from the canonical extension tree:
 
 ```bash
-zip -r ../CF-Daily-Web-Store-v1.4.0.zip manifest.json src icons LICENSE -x '*.DS_Store'
+zip -r ../CF-Daily-Web-Store-v1.5.0.zip manifest.json src icons LICENSE -x '*.DS_Store'
 ```
 
 The main extension files are:
 
-- `src/potd.js` — rating normalization, Codeforces API access, solved-problem filtering, and deterministic selection.
+- `src/potd.js` — rating normalization, Codeforces API access, completion matching, and deterministic selection.
 - `src/popup.js` — popup state, rating selection, persistent assignments, and completion display.
 - `src/script.js` — Codeforces account detection and problemset-table integration.
 - `src/profile.js` — local completion backfilling and combined/rating-specific profile heatmaps.
