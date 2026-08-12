@@ -71,7 +71,7 @@ npm start
 
 Never place the Supabase secret key in the extension or commit it to Git. Add the production API origin to `host_permissions` in `manifest.json`.
 
-The extension ID must remain stable after registering the redirect URL. For Chrome Web Store releases, register the callback derived from the Web Store extension ID. For unpacked development, keep reloading the same extension entry instead of removing and loading it again.
+The manifest contains a fixed public key, so every unpacked installation has extension ID `dhifecagnokekknghoejnlmoenknpaob`. Register `https://dhifecagnokekknghoejnlmoenknpaob.chromiumapp.org/supabase` as the Supabase redirect URL. The public manifest key is not a secret; the corresponding private key is kept outside this repository.
 
 ### API
 
@@ -112,7 +112,7 @@ node --test
 Create a Chrome Web Store ZIP directly from the canonical extension tree:
 
 ```bash
-zip -r ../CF-Daily-Web-Store-v2.1.0.zip manifest.json src icons LICENSE -x '*.DS_Store'
+zip -r ../CF-Daily-Web-Store-v2.1.1.zip manifest.json src icons LICENSE -x '*.DS_Store'
 ```
 
 The main extension files are:
