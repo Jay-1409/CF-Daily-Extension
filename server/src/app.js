@@ -1,9 +1,11 @@
 import express from 'express';
+import { readFileSync } from 'node:fs';
 import { supabase } from './supabase.js';
 import { getLeaderboard, getUserData, syncActivity, syncUser } from './activity.js';
 
 export const app = express();
 export default app;
+const landingPage = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
 
 app.use(express.json({ limit: '128kb' }));
 app.use((request, response, next) => {
@@ -33,6 +35,8 @@ async function requireAuth(request, response, next) {
 }
 
 app.get('/health', (request, response) => response.json({ ok: true }));
+app.get('/favicon.ico', (request, response) => response.sendStatus(204));
+app.get('/', (request, response) => response.type('html').send(landingPage));
 
 app.post('/api/session', requireAuth, async (request, response, next) => {
     try {

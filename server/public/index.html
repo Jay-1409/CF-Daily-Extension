@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="CF-Daily gives every Codeforces rating one shared Problem of the Day, with streaks, heatmaps, and leaderboards.">
+    <meta name="theme-color" content="#ff3850">
+    <title>CF-Daily — One problem for every rating. Every day.</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --ink: #18191d;
+            --muted: #686e7b;
+            --line: #e7e8ec;
+            --paper: #fff;
+            --soft: #f7f7f9;
+            --accent: #ff3850;
+            --accent-dark: #e92540;
+            --accent-soft: #fff0f2;
+            --green: #238636;
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at 75% 5%, rgb(255 56 80 / 10%), transparent 24rem),
+                radial-gradient(circle at 8% 36%, rgb(255 171 89 / 8%), transparent 20rem),
+                var(--soft);
+            color: var(--ink);
+        }
+
+        a { color: inherit; }
+
+        .shell {
+            width: min(1120px, calc(100% - 40px));
+            margin: auto;
+        }
+
+        nav {
+            display: flex;
+            min-height: 76px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -.03em;
+            text-decoration: none;
+        }
+
+        .mark {
+            display: grid;
+            width: 38px;
+            height: 38px;
+            place-items: center;
+            border: 1px solid rgb(255 56 80 / 14%);
+            border-radius: 12px;
+            background: var(--paper);
+            box-shadow: 0 6px 18px rgb(31 35 45 / 8%);
+            font-size: 20px;
+        }
+
+        .nav-link {
+            color: var(--muted);
+            font-size: 14px;
+            font-weight: 650;
+            text-decoration: none;
+        }
+
+        .hero {
+            display: grid;
+            min-height: 650px;
+            grid-template-columns: minmax(0, 1fr) minmax(380px, .82fr);
+            align-items: center;
+            gap: 70px;
+            padding: 72px 0 90px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border: 1px solid rgb(255 56 80 / 14%);
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow::before {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            content: "";
+        }
+
+        h1 {
+            max-width: 660px;
+            margin: 22px 0 18px;
+            font-size: clamp(48px, 6.4vw, 82px);
+            letter-spacing: -.065em;
+            line-height: .98;
+        }
+
+        .accent { color: var(--accent); }
+
+        .lede {
+            max-width: 590px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 18px;
+            line-height: 1.65;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .button {
+            display: inline-flex;
+            min-height: 48px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 18px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--paper);
+            font-size: 14px;
+            font-weight: 750;
+            text-decoration: none;
+            transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+        }
+
+        .button:hover { transform: translateY(-2px); }
+
+        .button.primary {
+            border-color: var(--accent);
+            background: var(--accent);
+            box-shadow: 0 10px 24px rgb(255 56 80 / 22%);
+            color: #fff;
+        }
+
+        .button.primary:hover { background: var(--accent-dark); }
+
+        .trust {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 22px 0 0;
+            padding: 0;
+            color: var(--muted);
+            font-size: 12px;
+            list-style: none;
+        }
+
+        .trust li::before {
+            margin-right: 6px;
+            color: var(--green);
+            content: "✓";
+            font-weight: 900;
+        }
+
+        .preview-wrap { position: relative; }
+
+        .preview-wrap::before {
+            position: absolute;
+            inset: 10% -8% -8% 22%;
+            border-radius: 50%;
+            background: rgb(255 56 80 / 11%);
+            content: "";
+            filter: blur(34px);
+        }
+
+        .preview {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: rgb(255 255 255 / 90%);
+            box-shadow: 0 26px 70px rgb(31 35 45 / 14%);
+            backdrop-filter: blur(14px);
+        }
+
+        .window-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 13px 16px;
+            border-bottom: 1px solid var(--line);
+            background: #fafafd;
+        }
+
+        .window-bar i {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d9dbe1;
+        }
+
+        .preview-body { padding: 22px; }
+
+        .preview-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .preview-head strong { font-size: 17px; }
+
+        .preview-head span {
+            display: block;
+            margin-top: 2px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .preview-label {
+            display: flex;
+            justify-content: space-between;
+            margin: 22px 0 8px;
+            font-size: 11px;
+            font-weight: 750;
+        }
+
+        .select {
+            display: flex;
+            height: 45px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            border: 1px solid #d9dbe1;
+            border-radius: 11px;
+            background: #fff;
+            font-weight: 750;
+        }
+
+        .problem {
+            margin-top: 14px;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            background: #fff;
+            box-shadow: 0 9px 28px rgb(31 35 45 / 6%);
+        }
+
+        .problem small {
+            color: var(--accent-dark);
+            font-weight: 850;
+            letter-spacing: .08em;
+        }
+
+        .problem h2 {
+            margin: 12px 0 6px;
+            font-size: 23px;
+            letter-spacing: -.035em;
+        }
+
+        .problem p {
+            margin: 0 0 18px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .solve {
+            display: grid;
+            min-height: 44px;
+            place-items: center;
+            border-radius: 10px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .features {
+            padding: 88px 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .section-copy {
+            max-width: 620px;
+            margin-bottom: 34px;
+        }
+
+        .section-copy h2 {
+            margin: 0 0 12px;
+            font-size: clamp(34px, 4vw, 52px);
+            letter-spacing: -.05em;
+        }
+
+        .section-copy p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        .feature {
+            min-height: 190px;
+            padding: 24px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgb(255 255 255 / 72%);
+        }
+
+        .feature-icon {
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            border-radius: 10px;
+            background: var(--accent-soft);
+            font-size: 17px;
+        }
+
+        .feature h3 { margin: 18px 0 8px; font-size: 16px; }
+
+        .feature p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .install {
+            display: grid;
+            grid-template-columns: .8fr 1.2fr;
+            gap: 60px;
+            padding: 88px 0 104px;
+            border-top: 1px solid var(--line);
+        }
+
+        .install h2 {
+            margin: 0 0 12px;
+            font-size: clamp(34px, 4vw, 52px);
+            letter-spacing: -.05em;
+        }
+
+        .install > div > p {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .steps {
+            display: grid;
+            gap: 12px;
+            margin: 0;
+            padding: 0;
+            counter-reset: step;
+            list-style: none;
+        }
+
+        .steps li {
+            display: grid;
+            min-height: 70px;
+            grid-template-columns: 36px 1fr;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--paper);
+            color: var(--muted);
+            font-size: 13px;
+            counter-increment: step;
+        }
+
+        .steps li::before {
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            border-radius: 10px;
+            background: var(--accent-soft);
+            color: var(--accent-dark);
+            content: counter(step);
+            font-weight: 850;
+        }
+
+        .steps strong { color: var(--ink); }
+
+        footer {
+            display: flex;
+            min-height: 82px;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        footer a { font-weight: 700; text-decoration: none; }
+
+        @media (max-width: 820px) {
+            .hero {
+                min-height: auto;
+                grid-template-columns: 1fr;
+                gap: 48px;
+                padding-top: 56px;
+            }
+
+            .preview-wrap { max-width: 500px; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .install { grid-template-columns: 1fr; gap: 30px; }
+        }
+
+        @media (max-width: 520px) {
+            .shell { width: min(100% - 28px, 1120px); }
+            nav { min-height: 66px; }
+            .nav-link { font-size: 12px; }
+            .hero { padding: 44px 0 70px; }
+            h1 { font-size: 50px; }
+            .lede { font-size: 16px; }
+            .button { width: 100%; }
+            .trust { gap: 8px 14px; }
+            .features, .install { padding: 68px 0; }
+            footer { align-items: flex-start; flex-direction: column; justify-content: center; gap: 7px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <nav aria-label="Primary navigation">
+            <a class="brand" href="#top"><span class="mark" aria-hidden="true">🗓️</span>CF-Daily</a>
+            <a class="nav-link" href="https://github.com/Jay-1409/CF-Daily-Extension">View on GitHub ↗</a>
+        </nav>
+
+        <main id="top">
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Free browser extension</span>
+                    <h1>One problem for<br><span class="accent">every rating.</span><br>Every day.</h1>
+                    <p class="lede">A shared Codeforces Problem of the Day for every rating—with completion tracking, activity heatmaps, cloud streaks, and community leaderboards.</p>
+                    <div class="actions">
+                        <a class="button primary" href="https://github.com/Jay-1409/CF-Daily-Extension/archive/refs/heads/main.zip">Download extension ↓</a>
+                        <a class="button" href="#install">Installation guide</a>
+                    </div>
+                    <ul class="trust" aria-label="Product details">
+                        <li>Free forever</li>
+                        <li>No Codeforces password</li>
+                        <li>Chrome, Edge &amp; Brave</li>
+                    </ul>
+                </div>
+
+                <div class="preview-wrap" aria-label="CF-Daily extension preview">
+                    <div class="preview">
+                        <div class="window-bar" aria-hidden="true"><i></i><i></i><i></i></div>
+                        <div class="preview-body">
+                            <div class="preview-head">
+                                <span class="mark" aria-hidden="true">🗓️</span>
+                                <div><strong>CF-Daily</strong><span>One focused problem, every day.</span></div>
+                            </div>
+                            <div class="preview-label"><span>Choose your rating</span><span>800–3500</span></div>
+                            <div class="select"><span>1400</span><span aria-hidden="true">⌄</span></div>
+                            <div class="problem">
+                                <small>● TODAY · 1400</small>
+                                <h2>Make a Square</h2>
+                                <p>962C</p>
+                                <div class="solve">Solve on Codeforces ↗</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="features" aria-labelledby="features-title">
+                <div class="section-copy">
+                    <h2 id="features-title">A daily habit that meets you where you are.</h2>
+                    <p>Pick an exact rating, solve the same challenge as everyone else, and build consistency without turning practice into another dashboard to manage.</p>
+                </div>
+                <div class="feature-grid">
+                    <article class="feature"><span class="feature-icon" aria-hidden="true">🎯</span><h3>Rating-specific POTDs</h3><p>Every rating from 800 to 3500 gets one globally consistent problem per UTC day.</p></article>
+                    <article class="feature"><span class="feature-icon" aria-hidden="true">▦</span><h3>Heatmaps &amp; streaks</h3><p>Track combined activity or inspect each rating independently on your Codeforces profile.</p></article>
+                    <article class="feature"><span class="feature-icon" aria-hidden="true">↗</span><h3>Community leaderboards</h3><p>Compare current streaks or total daily POTDs solved after signing in with Google.</p></article>
+                </div>
+            </section>
+
+            <section class="install" id="install" aria-labelledby="install-title">
+                <div>
+                    <h2 id="install-title">Install in under a minute.</h2>
+                    <p>CF-Daily is distributed as an unpacked extension. Download the ZIP, extract it, and point your Chromium browser at the folder.</p>
+                    <a class="button primary" href="https://github.com/Jay-1409/CF-Daily-Extension/archive/refs/heads/main.zip">Download ZIP ↓</a>
+                </div>
+                <ol class="steps">
+                    <li><span><strong>Extract the ZIP</strong><br>Open the downloaded archive and extract the CF-Daily folder.</span></li>
+                    <li><span><strong>Open your extensions page</strong><br>Visit <code>chrome://extensions</code> and enable Developer mode.</span></li>
+                    <li><span><strong>Choose Load unpacked</strong><br>Select the extracted CF-Daily folder. Pin the extension and start solving.</span></li>
+                </ol>
+            </section>
+        </main>
+
+        <footer>
+            <span>CF-Daily · Built for consistent Codeforces practice.</span>
+            <a href="https://github.com/Jay-1409/CF-Daily-Extension">Source code &amp; license ↗</a>
+        </footer>
+    </div>
+</body>
+</html>
