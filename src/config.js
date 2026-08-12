@@ -1,6 +1,7 @@
-// Firebase web API keys and OAuth client IDs identify your project; they are not secrets.
+// Supabase project URLs and publishable keys identify your project; they are not secrets.
 // Replace these values before loading or packaging the extension.
 globalThis.CFDailyConfig = Object.freeze({
-    firebaseApiKey: '',
+    supabaseUrl: '',
+    supabasePublishableKey: '',
     apiBaseUrl: 'http://localhost:3000'
 });

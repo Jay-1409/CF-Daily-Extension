@@ -39,7 +39,7 @@ function renderLeaderboard(entries = []) {
 async function loadAccount() {
     if (!CFDailyCloud.configured()) {
         signInButton.disabled = true;
-        setCloudStatus('Add Firebase configuration to enable cloud sync.');
+        setCloudStatus('Add Supabase configuration to enable cloud sync.');
         return;
     }
 
@@ -60,7 +60,7 @@ async function loadAccount() {
         currentStreak.textContent = String(dashboard.user.currentStreak);
         longestStreak.textContent = String(dashboard.user.longestStreak);
         renderLeaderboard(dashboard.leaderboard);
-        setCloudStatus('Activity synced with Firebase.');
+        setCloudStatus('Activity synced with Supabase.');
     } catch (error) {
         console.error(error);
         setCloudStatus(error.message, true);

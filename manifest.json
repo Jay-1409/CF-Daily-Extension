@@ -47,18 +47,9 @@
         "identity",
         "storage"
     ],
-    "oauth2": {
-        "client_id": "REPLACE_WITH_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
-        "scopes": [
-            "openid",
-            "email",
-            "profile"
-        ]
-    },
     "host_permissions": [
         "https://codeforces.com/*",
-        "https://identitytoolkit.googleapis.com/*",
-        "https://securetoken.googleapis.com/*",
+        "https://*.supabase.co/*",
         "http://localhost:3000/*",
         "http://127.0.0.1:3000/*"
     ]

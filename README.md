@@ -15,7 +15,7 @@ Every Codeforces rating from 800 through 3500 has one global daily assignment, s
 - Switch between a combined heatmap and an independent heatmap for every rating.
 - Switch ratings without changing or completing assignments for other ratings.
 - Keep assignments and preferences locally in browser storage.
-- Sign in with Google to synchronize heatmaps and streaks through Firebase.
+- Sign in with Google to synchronize heatmaps and streaks through Supabase.
 - Compare current streaks on the authenticated leaderboard.
 
 ## Screenshots
@@ -42,7 +42,7 @@ The selection does not depend on the current user or their submission history, s
 
 Open your own Codeforces profile to see the **CF-Daily Activity** panel. The combined view counts every completed rating-specific POTD for each day, while the selector provides a separate view for every rating from 800 through 3500.
 
-Completion records are currently stored only in `chrome.storage.local`. The profile page backfills missing records by matching locally saved assignments with accepted Codeforces submissions made on the corresponding POTD date.
+Completion records remain cached in `chrome.storage.local` for offline use. After Google sign-in, they are synchronized with Supabase so the profile heatmap and streak totals can follow the user across devices. The profile page also backfills missing records by matching locally saved assignments with accepted Codeforces submissions made on the corresponding POTD date.
 
 ## Codeforces account detection
 
@@ -50,17 +50,17 @@ CF-Daily does not have a separate sign-in form and never asks for Codeforces cre
 
 The extension still assigns the same global POTD without a detected handle, but completion tracking requires a Codeforces account.
 
-## Firebase server
+## Supabase server
 
-The `server/` directory contains the authenticated API for cloud activity, streaks, and the leaderboard. Firestore stores private user documents and per-day rating completions. The server verifies every Firebase ID token with Firebase Admin; direct client access to Firestore is denied by `firestore.rules`.
+The `server/` directory contains the authenticated API for cloud activity, streaks, and the leaderboard. Supabase Postgres stores profiles and one completion per user, UTC date, and rating. The API verifies Supabase access tokens and performs privileged writes with the secret-key client.
 
-### Firebase setup
+### Supabase setup
 
-1. Create a Firebase project and enable **Google** under Authentication → Sign-in method.
-2. Create a Firestore database and deploy `firestore.rules`.
-3. Create a Google OAuth client for the extension and replace `oauth2.client_id` in `manifest.json`.
-4. Copy the Firebase Web API key into `src/config.js` and set the deployed API URL.
-5. In `server/`, copy `.env.example` to `.env`, install dependencies, and start the API:
+1. Create a Supabase project and enable **Google** under Authentication → Providers.
+2. Run `supabase/migrations/001_initial.sql` in the Supabase SQL editor.
+3. Load the unpacked extension once and copy its redirect URL (`https://<extension-id>.chromiumapp.org/supabase`) into Supabase Authentication → URL Configuration → Redirect URLs.
+4. Copy the Supabase project URL and publishable key into `src/config.js` as `supabaseUrl` and `supabasePublishableKey`, then set the deployed API URL.
+5. In `server/`, copy `.env.example` to `.env`, add the Supabase publishable and secret keys, install dependencies, and start the API:
 
 ```bash
 cd server
@@ -69,11 +69,13 @@ npm install
 npm start
 ```
 
-For production, deploy the server with Application Default Credentials instead of putting a service-account private key in the repository. Add the production API origin to `host_permissions` in `manifest.json`.
+Never place the Supabase secret key in the extension or commit it to Git. Add the production API origin to `host_permissions` in `manifest.json`.
+
+The extension ID must remain stable after registering the redirect URL. For Chrome Web Store releases, register the callback derived from the Web Store extension ID. For unpacked development, keep reloading the same extension entry instead of removing and loading it again.
 
 ### API
 
-- `POST /api/session` — creates or updates the authenticated Firebase user.
+- `POST /api/session` — creates or updates the authenticated Supabase user.
 - `GET /api/me` — returns cloud activity and streak totals.
 - `POST /api/activity/sync` — merges local daily completions and recalculates streaks.
 - `GET /api/leaderboard` — ranks users by current streak, then longest streak and completions.

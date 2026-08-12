@@ -1,70 +1,51 @@
 (function (root) {
-    const SESSION_KEY = 'firebaseSession';
+    const SESSION_KEY = 'supabaseSession';
     const config = root.CFDailyConfig || {};
 
+    function supabaseUrl() {
+        return config.supabaseUrl.replace(/\/$/, '');
+    }
+
     function configured() {
-        return Boolean(config.firebaseApiKey && config.apiBaseUrl);
+        return Boolean(config.supabaseUrl && config.supabasePublishableKey && config.apiBaseUrl);
     }
 
-    function identityToken(interactive) {
-        return new Promise((resolve, reject) => {
-            chrome.identity.getAuthToken({ interactive }, token => {
-                const error = chrome.runtime.lastError;
-                if (error) reject(new Error(error.message));
-                else resolve(typeof token === 'string' ? token : token?.token);
-            });
-        });
-    }
-
-    async function exchangeGoogleToken(accessToken) {
-        const response = await fetch(
-            `https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${encodeURIComponent(config.firebaseApiKey)}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    requestUri: chrome.identity.getRedirectURL(),
-                    postBody: `access_token=${encodeURIComponent(accessToken)}&providerId=google.com`,
-                    returnIdpCredential: true,
-                    returnSecureToken: true
-                })
-            }
-        );
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error?.message || 'Firebase sign-in failed');
-
+    function authHeaders() {
         return {
-            idToken: result.idToken,
-            refreshToken: result.refreshToken,
-            expiresAt: Date.now() + Number(result.expiresIn) * 1000,
-            uid: result.localId,
-            displayName: result.displayName || result.email?.split('@')[0] || 'CF-Daily user',
-            email: result.email || '',
-            photoURL: result.photoUrl || ''
+            apikey: config.supabasePublishableKey,
+            'Content-Type': 'application/json'
         };
     }
 
-    async function refreshSession(session) {
-        const response = await fetch(
-            `https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(config.firebaseApiKey)}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    grant_type: 'refresh_token',
-                    refresh_token: session.refreshToken
-                })
-            }
-        );
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error?.message || 'Firebase session refresh failed');
-
-        const refreshed = {
-            ...session,
-            idToken: result.id_token,
+    function displaySession(result) {
+        const metadata = result.user?.user_metadata || {};
+        return {
+            accessToken: result.access_token,
             refreshToken: result.refresh_token,
-            expiresAt: Date.now() + Number(result.expires_in) * 1000
+            expiresAt: Date.now() + Number(result.expires_in) * 1000,
+            uid: result.user?.id,
+            displayName: metadata.full_name || result.user?.email?.split('@')[0] || 'CF-Daily user',
+            email: result.user?.email || '',
+            photoURL: metadata.avatar_url || ''
         };
+    }
+
+    async function authRequest(path, body) {
+        const response = await fetch(`${supabaseUrl()}/auth/v1/${path}`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(body)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.msg || result.error_description || result.message || 'Supabase authentication failed');
+        return result;
+    }
+
+    async function refreshSession(current) {
+        const result = await authRequest('token?grant_type=refresh_token', {
+            refresh_token: current.refreshToken
+        });
+        const refreshed = displaySession(result);
         await chrome.storage.local.set({ [SESSION_KEY]: refreshed });
         return refreshed;
     }
@@ -84,18 +65,48 @@
     }
 
     async function signIn() {
-        if (!configured()) throw new Error('Add your Firebase API key in src/config.js first');
-        const accessToken = await identityToken(true);
-        const firebaseSession = await exchangeGoogleToken(accessToken);
-        await chrome.storage.local.set({ [SESSION_KEY]: firebaseSession });
-        return firebaseSession;
+        if (!configured()) throw new Error('Add your Supabase settings in src/config.js first');
+        const redirectTo = chrome.identity.getRedirectURL('supabase');
+        const authorizeUrl = new URL(`${supabaseUrl()}/auth/v1/authorize`);
+        authorizeUrl.searchParams.set('provider', 'google');
+        authorizeUrl.searchParams.set('redirect_to', redirectTo);
+
+        const callbackUrl = await chrome.identity.launchWebAuthFlow({
+            url: authorizeUrl.href,
+            interactive: true
+        });
+        if (!callbackUrl) throw new Error('Google sign-in was cancelled');
+
+        const fragment = new URL(callbackUrl).hash.slice(1);
+        const result = Object.fromEntries(new URLSearchParams(fragment));
+        if (result.error_description) throw new Error(result.error_description);
+        if (!result.access_token || !result.refresh_token) throw new Error('Supabase did not return a session');
+
+        const response = await fetch(`${supabaseUrl()}/auth/v1/user`, {
+            headers: {
+                apikey: config.supabasePublishableKey,
+                Authorization: `Bearer ${result.access_token}`
+            }
+        });
+        const user = await response.json();
+        if (!response.ok) throw new Error(user.message || 'Could not load Supabase user');
+        const signedIn = displaySession({ ...result, user, expires_in: result.expires_in });
+        await chrome.storage.local.set({ [SESSION_KEY]: signedIn });
+        return signedIn;
     }
 
     async function signOut() {
-        await chrome.storage.local.remove(SESSION_KEY);
-        if (chrome.identity.clearAllCachedAuthTokens) {
-            await chrome.identity.clearAllCachedAuthTokens();
+        const current = await session();
+        if (current) {
+            await fetch(`${supabaseUrl()}/auth/v1/logout`, {
+                method: 'POST',
+                headers: {
+                    apikey: config.supabasePublishableKey,
+                    Authorization: `Bearer ${current.accessToken}`
+                }
+            }).catch(console.error);
         }
+        await chrome.storage.local.remove(SESSION_KEY);
     }
 
     async function request(path, options = {}) {
@@ -105,7 +116,7 @@
             ...options,
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${current.idToken}`,
+                Authorization: `Bearer ${current.accessToken}`,
                 ...options.headers
             }
         });
