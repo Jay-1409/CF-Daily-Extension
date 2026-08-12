@@ -69,7 +69,8 @@ app.post('/api/activity/sync', requireAuth, async (request, response, next) => {
 app.get('/api/leaderboard', requireAuth, async (request, response, next) => {
     try {
         const limit = Math.min(50, Math.max(1, Number(request.query.limit) || 10));
-        response.json({ leaderboard: await getLeaderboard(limit) });
+        const metric = request.query.metric === 'solved' ? 'solved' : 'streak';
+        response.json({ metric, leaderboard: await getLeaderboard(limit, metric) });
     } catch (error) {
         next(error);
     }

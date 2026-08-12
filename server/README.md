@@ -1,6 +1,6 @@
 # CF-Daily server
 
-Authenticated Express API for Supabase Auth, Postgres activity storage, streak calculations, and the current-streak leaderboard.
+Authenticated Express API for Supabase Auth, Postgres activity storage, streak calculations, and streak/solved leaderboards.
 
 ## Postgres model
 
@@ -13,7 +13,7 @@ activity
   user_id, day, rating, problem_key, completed_at
 ```
 
-One active UTC day contributes one day to a streak, regardless of how many rating-specific POTDs the user completes on that day. The leaderboard sorts by current streak, longest streak, total completions, then display name.
+One active UTC day contributes one day to a streak, regardless of how many rating-specific POTDs the user completes on that day. The streak leaderboard sorts by current streak, while the solved leaderboard sorts by total rating-specific POTD completions.
 
 ## Run locally
 

@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { rankProfiles } from './leaderboard.js';
 import { utcDay } from './streaks.js';
 
 const RATINGS = new Set(Array.from({ length: 28 }, (_, index) => 800 + index * 100));
@@ -86,16 +87,9 @@ export async function getUserData(uid) {
     return { user: publicUser(profile), activity };
 }
 
-export async function getLeaderboard(limit = 10) {
-    const profiles = check(await supabase.from('profiles').select('*'));
-    return profiles
-        .map(publicUser)
-        .sort((left, right) => (
-            right.currentStreak - left.currentStreak
-            || right.longestStreak - left.longestStreak
-            || right.totalCompletions - left.totalCompletions
-            || left.displayName.localeCompare(right.displayName)
-        ))
+export async function getLeaderboard(limit = 10, metric = 'streak') {
+    const profiles = check(await supabase.from('profiles').select('*')).map(publicUser);
+    return rankProfiles(profiles, metric)
         .slice(0, limit)
         .map((user, index) => ({ rank: index + 1, ...user }));
 }
