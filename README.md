@@ -15,6 +15,8 @@ Every Codeforces rating from 800 through 3500 has one global daily assignment, s
 - Switch between a combined heatmap and an independent heatmap for every rating.
 - Switch ratings without changing or completing assignments for other ratings.
 - Keep assignments and preferences locally in browser storage.
+- Sign in with Google to synchronize heatmaps and streaks through Firebase.
+- Compare current streaks on the authenticated leaderboard.
 
 ## Screenshots
 
@@ -48,6 +50,34 @@ CF-Daily does not have a separate sign-in form and never asks for Codeforces cre
 
 The extension still assigns the same global POTD without a detected handle, but completion tracking requires a Codeforces account.
 
+## Firebase server
+
+The `server/` directory contains the authenticated API for cloud activity, streaks, and the leaderboard. Firestore stores private user documents and per-day rating completions. The server verifies every Firebase ID token with Firebase Admin; direct client access to Firestore is denied by `firestore.rules`.
+
+### Firebase setup
+
+1. Create a Firebase project and enable **Google** under Authentication → Sign-in method.
+2. Create a Firestore database and deploy `firestore.rules`.
+3. Create a Google OAuth client for the extension and replace `oauth2.client_id` in `manifest.json`.
+4. Copy the Firebase Web API key into `src/config.js` and set the deployed API URL.
+5. In `server/`, copy `.env.example` to `.env`, install dependencies, and start the API:
+
+```bash
+cd server
+cp .env.example .env
+npm install
+npm start
+```
+
+For production, deploy the server with Application Default Credentials instead of putting a service-account private key in the repository. Add the production API origin to `host_permissions` in `manifest.json`.
+
+### API
+
+- `POST /api/session` — creates or updates the authenticated Firebase user.
+- `GET /api/me` — returns cloud activity and streak totals.
+- `POST /api/activity/sync` — merges local daily completions and recalculates streaks.
+- `GET /api/leaderboard` — ranks users by current streak, then longest streak and completions.
+
 ## Install from source
 
 ### Chrome, Edge, or Brave
@@ -80,7 +110,7 @@ node --test
 Create a Chrome Web Store ZIP directly from the canonical extension tree:
 
 ```bash
-zip -r ../CF-Daily-Web-Store-v1.5.0.zip manifest.json src icons LICENSE -x '*.DS_Store'
+zip -r ../CF-Daily-Web-Store-v2.0.0.zip manifest.json src icons LICENSE -x '*.DS_Store'
 ```
 
 The main extension files are:

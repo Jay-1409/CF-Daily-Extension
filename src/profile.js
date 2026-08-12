@@ -159,9 +159,31 @@
         }
 
         const activity = { ...stored, ...updates };
-        const records = Object.keys(activity)
+        let records = Object.keys(activity)
             .map(key => parseDatedRatingKey(key, completionPrefix))
             .filter(Boolean);
+
+        try {
+            const cloud = await CFDailyCloud.syncLocalActivity(signedInHandle);
+            if (cloud) {
+                const cloudUpdates = {};
+                for (const completion of cloud.activity) {
+                    const key = CFDaily.completionStorageKey(
+                        signedInHandle,
+                        completion.rating,
+                        completion.day
+                    );
+                    cloudUpdates[key] = {
+                        problemKey: completion.problemKey,
+                        completedAt: completion.completedAt
+                    };
+                }
+                if (Object.keys(cloudUpdates).length) await chrome.storage.local.set(cloudUpdates);
+                records = cloud.activity.map(({ day, rating }) => ({ day, rating }));
+            }
+        } catch (error) {
+            console.error(error);
+        }
         pageContent.append(createPanel(records, stored.heatmapView || 'combined'));
     }
 

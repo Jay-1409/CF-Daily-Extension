@@ -165,6 +165,7 @@
                         completedAt: submission.completedAt
                     }
                 });
+                CFDailyCloud.syncLocalActivity(currentHandle).catch(console.error);
             }
             if (version !== renderVersion) return;
 

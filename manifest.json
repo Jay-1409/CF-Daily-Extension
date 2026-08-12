@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "CF-Daily",
-    "version": "1.5.0",
+    "version": "2.0.0",
     "description": "One shared Codeforces Problem of the Day for every rating",
     "content_scripts": [
         {
@@ -9,7 +9,9 @@
                 "src/styles.css"
             ],
             "js": [
+                "src/config.js",
                 "src/potd.js",
+                "src/cloud.js",
                 "src/script.js"
             ],
             "matches": [
@@ -21,7 +23,9 @@
                 "src/heatmap.css"
             ],
             "js": [
+                "src/config.js",
                 "src/potd.js",
+                "src/cloud.js",
                 "src/profile.js"
             ],
             "matches": [
@@ -40,9 +44,22 @@
         "128": "icons/icon128.png"
     },
     "permissions": [
+        "identity",
         "storage"
     ],
+    "oauth2": {
+        "client_id": "REPLACE_WITH_GOOGLE_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+        "scopes": [
+            "openid",
+            "email",
+            "profile"
+        ]
+    },
     "host_permissions": [
-        "https://codeforces.com/*"
+        "https://codeforces.com/*",
+        "https://identitytoolkit.googleapis.com/*",
+        "https://securetoken.googleapis.com/*",
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*"
     ]
 }

@@ -1,11 +1,71 @@
 const ratingSelect = document.getElementById('ratingSelect');
 const output = document.getElementById('output');
 const userNote = document.getElementById('userNote');
+const accountPanel = document.getElementById('accountPanel');
+const signInButton = document.getElementById('signInButton');
+const signOutButton = document.getElementById('signOutButton');
+const accountContent = document.getElementById('accountContent');
+const accountAvatar = document.getElementById('accountAvatar');
+const accountName = document.getElementById('accountName');
+const accountEmail = document.getElementById('accountEmail');
+const currentStreak = document.getElementById('currentStreak');
+const longestStreak = document.getElementById('longestStreak');
+const leaderboardList = document.getElementById('leaderboardList');
+const cloudStatus = document.getElementById('cloudStatus');
 
 let handle = 'Enter';
 let loadVersion = 0;
 let problemsetPromise;
 let acceptedSubmissionsPromise;
+
+function setCloudStatus(message, isError = false) {
+    cloudStatus.textContent = message;
+    cloudStatus.classList.toggle('error', isError);
+}
+
+function renderLeaderboard(entries = []) {
+    leaderboardList.replaceChildren();
+    for (const entry of entries) {
+        const item = document.createElement('li');
+        const name = document.createElement('span');
+        const streak = document.createElement('strong');
+        name.textContent = entry.displayName;
+        streak.textContent = `${entry.currentStreak} day${entry.currentStreak === 1 ? '' : 's'}`;
+        item.append(name, streak);
+        leaderboardList.append(item);
+    }
+}
+
+async function loadAccount() {
+    if (!CFDailyCloud.configured()) {
+        signInButton.disabled = true;
+        setCloudStatus('Add Firebase configuration to enable cloud sync.');
+        return;
+    }
+
+    try {
+        const session = await CFDailyCloud.session();
+        signInButton.hidden = Boolean(session);
+        accountContent.hidden = !session;
+        if (!session) {
+            setCloudStatus('Sign in to sync activity across devices.');
+            return;
+        }
+
+        accountAvatar.src = session.photoURL || '../icons/icon48.png';
+        accountName.textContent = session.displayName;
+        accountEmail.textContent = session.email;
+        setCloudStatus('Syncing activity…');
+        const dashboard = await CFDailyCloud.dashboard(handle);
+        currentStreak.textContent = String(dashboard.user.currentStreak);
+        longestStreak.textContent = String(dashboard.user.longestStreak);
+        renderLeaderboard(dashboard.leaderboard);
+        setCloudStatus('Activity synced with Firebase.');
+    } catch (error) {
+        console.error(error);
+        setCloudStatus(error.message, true);
+    }
+}
 
 function setStatus(message, isLoading = true) {
     output.replaceChildren();
@@ -144,12 +204,32 @@ async function initialise() {
         : 'Today’s accepted submission updates your activity.';
 
     await loadProblem();
+    await loadAccount();
 }
 
 ratingSelect.addEventListener('change', async () => {
     const selectedRating = CFDaily.normalizeRating(ratingSelect.value);
     await chrome.storage.local.set({ selectedRating });
     await loadProblem();
+});
+
+signInButton.addEventListener('click', async () => {
+    signInButton.disabled = true;
+    setCloudStatus('Opening Google sign-in…');
+    try {
+        await CFDailyCloud.signIn();
+        await loadAccount();
+    } catch (error) {
+        console.error(error);
+        setCloudStatus(error.message, true);
+    } finally {
+        signInButton.disabled = false;
+    }
+});
+
+signOutButton.addEventListener('click', async () => {
+    await CFDailyCloud.signOut();
+    await loadAccount();
 });
 
 initialise();

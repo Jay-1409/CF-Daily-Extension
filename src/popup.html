@@ -38,13 +38,41 @@
             </div>
         </section>
 
+        <section id="accountPanel" class="account-panel" aria-live="polite">
+            <button id="signInButton" class="google-button" type="button">
+                <span class="google-mark" aria-hidden="true">G</span>
+                Sign in with Google
+            </button>
+            <div id="accountContent" hidden>
+                <div class="account-header">
+                    <img id="accountAvatar" alt="">
+                    <div>
+                        <strong id="accountName"></strong>
+                        <span id="accountEmail"></span>
+                    </div>
+                    <button id="signOutButton" class="text-button" type="button">Sign out</button>
+                </div>
+                <div class="streak-stats">
+                    <div><strong id="currentStreak">0</strong><span>Current streak</span></div>
+                    <div><strong id="longestStreak">0</strong><span>Best streak</span></div>
+                </div>
+                <details class="leaderboard">
+                    <summary>Top streaks</summary>
+                    <ol id="leaderboardList"></ol>
+                </details>
+            </div>
+            <p id="cloudStatus"></p>
+        </section>
+
         <footer class="privacy-note">
             <span class="status-dot" aria-hidden="true"></span>
             <p id="userNote"></p>
         </footer>
     </main>
 
+    <script src="./config.js"></script>
     <script src="./potd.js"></script>
+    <script src="./cloud.js"></script>
     <script src="./popup.js"></script>
 </body>
 
