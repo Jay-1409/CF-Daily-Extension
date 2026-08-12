@@ -64,7 +64,7 @@
         }
     }
 
-    async function signIn() {
+    async function completeSignIn() {
         if (!configured()) throw new Error('Add your Supabase settings in src/config.js first');
         const redirectTo = chrome.identity.getRedirectURL('supabase');
         const authorizeUrl = new URL(`${supabaseUrl()}/auth/v1/authorize`);
@@ -93,6 +93,12 @@
         const signedIn = displaySession({ ...result, user, expires_in: result.expires_in });
         await chrome.storage.local.set({ [SESSION_KEY]: signedIn });
         return signedIn;
+    }
+
+    async function signIn() {
+        const response = await chrome.runtime.sendMessage({ type: 'cf-daily-sign-in' });
+        if (!response?.ok) throw new Error(response?.error || 'Google sign-in failed');
+        return response.session;
     }
 
     async function signOut() {
@@ -151,12 +157,22 @@
     async function dashboard(handle) {
         const me = await syncLocalActivity(handle);
         if (!me) return null;
-        const leaderboard = await request('/api/leaderboard?limit=5');
-        return { ...me, leaderboard: leaderboard.leaderboard };
+        const [streak, solved] = await Promise.all([
+            request('/api/leaderboard?metric=streak&limit=5'),
+            request('/api/leaderboard?metric=solved&limit=5')
+        ]);
+        return {
+            ...me,
+            leaderboards: {
+                streak: streak.leaderboard,
+                solved: solved.leaderboard
+            }
+        };
     }
 
     root.CFDailyCloud = {
         configured,
+        completeSignIn,
         dashboard,
         session,
         signIn,

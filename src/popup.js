@@ -10,28 +10,46 @@ const accountName = document.getElementById('accountName');
 const accountEmail = document.getElementById('accountEmail');
 const currentStreak = document.getElementById('currentStreak');
 const longestStreak = document.getElementById('longestStreak');
+const leaderboardPanel = document.getElementById('leaderboardPanel');
 const leaderboardList = document.getElementById('leaderboardList');
+const leaderboardDescription = document.getElementById('leaderboardDescription');
+const leaderboardButtons = [...document.querySelectorAll('[data-leaderboard-metric]')];
 const cloudStatus = document.getElementById('cloudStatus');
 
 let handle = 'Enter';
 let loadVersion = 0;
 let problemsetPromise;
 let acceptedSubmissionsPromise;
+let leaderboards = { streak: [], solved: [] };
+let leaderboardMetric = 'streak';
+
+function setSignedIn(isSignedIn) {
+    signInButton.hidden = isSignedIn;
+    accountContent.hidden = !isSignedIn;
+    leaderboardPanel.hidden = !isSignedIn;
+    document.documentElement.classList.toggle('signed-in', isSignedIn);
+}
 
 function setCloudStatus(message, isError = false) {
     cloudStatus.textContent = message;
     cloudStatus.classList.toggle('error', isError);
 }
 
-function renderLeaderboard(entries = []) {
+function renderLeaderboard() {
+    const entries = leaderboards[leaderboardMetric] || [];
+    leaderboardDescription.textContent = leaderboardMetric === 'solved'
+        ? 'Rating-specific POTDs completed'
+        : 'Consecutive active days';
     leaderboardList.replaceChildren();
     for (const entry of entries) {
         const item = document.createElement('li');
         const name = document.createElement('span');
-        const streak = document.createElement('strong');
-        name.textContent = entry.displayName;
-        streak.textContent = `${entry.currentStreak} day${entry.currentStreak === 1 ? '' : 's'}`;
-        item.append(name, streak);
+        const score = document.createElement('strong');
+        name.textContent = `${entry.rank}. ${entry.displayName}`;
+        score.textContent = leaderboardMetric === 'solved'
+            ? `${entry.totalCompletions} solved`
+            : `${entry.currentStreak} day${entry.currentStreak === 1 ? '' : 's'}`;
+        item.append(name, score);
         leaderboardList.append(item);
     }
 }
@@ -45,9 +63,9 @@ async function loadAccount() {
 
     try {
         const session = await CFDailyCloud.session();
-        signInButton.hidden = Boolean(session);
-        accountContent.hidden = !session;
+        setSignedIn(Boolean(session));
         if (!session) {
+            userNote.textContent = 'Sign in to sync daily completions.';
             setCloudStatus('Sign in to sync activity across devices.');
             return;
         }
@@ -59,7 +77,9 @@ async function loadAccount() {
         const dashboard = await CFDailyCloud.dashboard(handle);
         currentStreak.textContent = String(dashboard.user.currentStreak);
         longestStreak.textContent = String(dashboard.user.longestStreak);
-        renderLeaderboard(dashboard.leaderboard);
+        leaderboards = dashboard.leaderboards;
+        renderLeaderboard();
+        userNote.textContent = 'Daily completions sync across your devices.';
         setCloudStatus('Activity synced with Supabase.');
     } catch (error) {
         console.error(error);
@@ -212,6 +232,16 @@ ratingSelect.addEventListener('change', async () => {
     await chrome.storage.local.set({ selectedRating });
     await loadProblem();
 });
+
+for (const button of leaderboardButtons) {
+    button.addEventListener('click', () => {
+        leaderboardMetric = button.dataset.leaderboardMetric;
+        for (const candidate of leaderboardButtons) {
+            candidate.setAttribute('aria-selected', String(candidate === button));
+        }
+        renderLeaderboard();
+    });
+}
 
 signInButton.addEventListener('click', async () => {
     signInButton.disabled = true;

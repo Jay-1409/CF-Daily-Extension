@@ -15,9 +15,23 @@
     box-sizing: border-box;
 }
 
+html,
 body {
     width: 352px;
+    min-width: 352px;
+    max-width: 352px;
     margin: 0;
+    overflow-x: hidden;
+}
+
+html.signed-in,
+html.signed-in body {
+    width: 780px;
+    min-width: 780px;
+    max-width: 780px;
+}
+
+body {
     background:
         radial-gradient(circle at 100% 0%, rgb(255 56 80 / 9%), transparent 165px),
         #f7f7f9;
@@ -25,6 +39,12 @@ body {
 
 #popupWindow {
     padding: 20px;
+}
+
+html.signed-in #popupWindow {
+    display: grid;
+    grid-template-columns: 312px 1fr;
+    gap: 20px;
 }
 
 .app-header {
@@ -430,27 +450,102 @@ select:focus-visible {
 .streak-stats strong { font-size: 17px; }
 .streak-stats span { margin-top: 2px; color: var(--muted); font-size: 9px; }
 
-.leaderboard {
-    margin-top: 10px;
+.leaderboard-panel {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 9px 28px rgb(31 35 45 / 7%);
+}
+
+.leaderboard-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.leaderboard-heading > strong {
+    color: #50545d;
+}
+
+.section-kicker {
+    color: var(--accent-dark);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.leaderboard-heading h2 {
+    margin: 3px 0 0;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+}
+
+#leaderboardDescription {
+    margin-top: 5px;
+    color: var(--muted);
     font-size: 10px;
 }
 
-.leaderboard summary {
-    color: #50545d;
+.leaderboard-tabs {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 8px;
+    background: #f2f3f5;
+}
+
+.leaderboard-tabs button {
+    padding: 6px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 10px;
     font-weight: 700;
     cursor: pointer;
 }
 
-.leaderboard ol {
-    margin: 8px 0 0;
-    padding-left: 20px;
+.leaderboard-tabs button[aria-selected="true"] {
+    background: var(--surface);
+    box-shadow: 0 1px 4px rgb(31 35 45 / 10%);
+    color: #202126;
 }
 
-.leaderboard li {
+.leaderboard-tabs button:focus-visible {
+    outline: 2px solid rgb(255 56 80 / 22%);
+    outline-offset: 1px;
+}
+
+.leaderboard-panel ol {
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.leaderboard-panel li {
     display: flex;
+    min-height: 44px;
+    align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-top: 5px;
+    padding: 8px 4px;
+    border-top: 1px solid #f0f1f3;
+    font-size: 11px;
+}
+
+.leaderboard-panel li span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.leaderboard-panel li strong {
+    flex: none;
+    color: var(--accent-dark);
 }
 
 #cloudStatus {

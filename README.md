@@ -16,7 +16,7 @@ Every Codeforces rating from 800 through 3500 has one global daily assignment, s
 - Switch ratings without changing or completing assignments for other ratings.
 - Keep assignments and preferences locally in browser storage.
 - Sign in with Google to synchronize heatmaps and streaks through Supabase.
-- Compare current streaks on the authenticated leaderboard.
+- Switch between authenticated leaderboards for current streak and total daily POTDs solved.
 
 ## Screenshots
 
@@ -78,7 +78,7 @@ The extension ID must remain stable after registering the redirect URL. For Chro
 - `POST /api/session` — creates or updates the authenticated Supabase user.
 - `GET /api/me` — returns cloud activity and streak totals.
 - `POST /api/activity/sync` — merges local daily completions and recalculates streaks.
-- `GET /api/leaderboard` — ranks users by current streak, then longest streak and completions.
+- `GET /api/leaderboard?metric=streak|solved` — ranks users by current streak or total daily POTDs solved.
 
 ## Install from source
 
@@ -112,7 +112,7 @@ node --test
 Create a Chrome Web Store ZIP directly from the canonical extension tree:
 
 ```bash
-zip -r ../CF-Daily-Web-Store-v2.0.0.zip manifest.json src icons LICENSE -x '*.DS_Store'
+zip -r ../CF-Daily-Web-Store-v2.1.0.zip manifest.json src icons LICENSE -x '*.DS_Store'
 ```
 
 The main extension files are:

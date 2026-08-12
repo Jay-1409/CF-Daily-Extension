@@ -1,8 +1,11 @@
 {
     "manifest_version": 3,
     "name": "CF-Daily",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "One shared Codeforces Problem of the Day for every rating",
+    "background": {
+        "service_worker": "src/background.js"
+    },
     "content_scripts": [
         {
             "css": [
