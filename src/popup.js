@@ -13,6 +13,8 @@ const longestStreak = document.getElementById('longestStreak');
 const leaderboardPanel = document.getElementById('leaderboardPanel');
 const leaderboardList = document.getElementById('leaderboardList');
 const leaderboardDescription = document.getElementById('leaderboardDescription');
+const leaderboardStatus = document.getElementById('leaderboardStatus');
+const leaderboardStatusText = document.getElementById('leaderboardStatusText');
 const leaderboardButtons = [...document.querySelectorAll('[data-leaderboard-metric]')];
 const cloudStatus = document.getElementById('cloudStatus');
 
@@ -33,6 +35,17 @@ function setSignedIn(isSignedIn) {
 function setCloudStatus(message, isError = false) {
     cloudStatus.textContent = message;
     cloudStatus.classList.toggle('error', isError);
+}
+
+function setLeaderboardStatus(message = '', isError = false) {
+    const isLoading = Boolean(message) && !isError;
+    leaderboardStatus.hidden = !message;
+    leaderboardStatus.classList.toggle('error', isError);
+    leaderboardStatus.classList.toggle('loading', isLoading);
+    leaderboardStatusText.textContent = message;
+    leaderboardList.hidden = Boolean(message);
+    leaderboardPanel.setAttribute('aria-busy', String(isLoading));
+    for (const button of leaderboardButtons) button.disabled = isLoading;
 }
 
 function renderLeaderboard() {
@@ -73,16 +86,19 @@ async function loadAccount() {
         accountAvatar.src = session.photoURL || '../icons/icon48.png';
         accountName.textContent = session.displayName;
         accountEmail.textContent = session.email;
+        setLeaderboardStatus('Loading leaderboard…');
         setCloudStatus('Syncing activity…');
         const dashboard = await CFDailyCloud.dashboard(handle);
         currentStreak.textContent = String(dashboard.user.currentStreak);
         longestStreak.textContent = String(dashboard.user.longestStreak);
         leaderboards = dashboard.leaderboards;
         renderLeaderboard();
+        setLeaderboardStatus();
         userNote.textContent = 'Daily completions sync across your devices.';
         setCloudStatus('Activity synced with Supabase.');
     } catch (error) {
         console.error(error);
+        if (!leaderboardPanel.hidden) setLeaderboardStatus('Could not load leaderboard.', true);
         setCloudStatus(error.message, true);
     }
 }

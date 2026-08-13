@@ -20,9 +20,9 @@ Every Codeforces rating from 800 through 3500 has one global daily assignment, s
 
 ## Screenshots
 
-### Rating-specific POTD popup
+### Rating-specific POTD and leaderboards
 
-![CF-Daily popup showing a 1400-rated Problem of the Day](docs/images/popup-potd.png)
+![CF-Daily popup showing a rating-specific Problem of the Day, account streaks, and switchable leaderboards](docs/images/popup-potd.png)
 
 ### Codeforces problemset integration
 
@@ -112,7 +112,7 @@ node --test
 Create a Chrome Web Store ZIP directly from the canonical extension tree:
 
 ```bash
-zip -r ../CF-Daily-Web-Store-v2.1.1.zip manifest.json src icons LICENSE -x '*.DS_Store'
+zip -r ../CF-Daily-Web-Store-v2.1.2.zip manifest.json src icons LICENSE -x '*.DS_Store'
 ```
 
 The main extension files are:

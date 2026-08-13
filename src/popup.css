@@ -520,6 +520,36 @@ select:focus-visible {
     outline-offset: 1px;
 }
 
+.leaderboard-tabs button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+.leaderboard-status {
+    display: grid;
+    min-height: 180px;
+    place-content: center;
+    justify-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.leaderboard-status[hidden] { display: none; }
+
+.leaderboard-spinner {
+    display: none;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #f2d9dc;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 700ms linear infinite;
+}
+
+.leaderboard-status.loading .leaderboard-spinner { display: block; }
+.leaderboard-status.error { color: #b42318; }
+
 .leaderboard-panel ol {
     margin: 16px 0 0;
     padding: 0;
