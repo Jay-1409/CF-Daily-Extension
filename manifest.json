@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "CF-Daily",
-    "version": "2.1.2",
+    "version": "2.2.0",
     "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Bc3htGUDUTO6nXW7SqKZgYAM17nxaiTFlwG3enfmvwbVKrdqT0J1ZI4V/8er3DbLD45yhv1IQfs0ZjQSBkexkXsbEdFXFQ4QU9HPfKQPIIS1ksStpmVawD3ltFqcw5cx6j0F95WrK5kcv00h7Sy18uIE4XuqV/XKiHn3eBCiGTeFCAKNQ+FFpJb7fePpq1Rzw1hsJtMO9BSi3DsCEvlroApt07DfTFMPmEtldnwyi2HTYURhzEhgjqc47OG0h9if4esKo3s9L/f3X3j033XQ+ZK0wMdbphOabW4QKtiSSstjNNUKnK8NbkLe5BjegokK/RWu4fM8rU2ASeIvsCjSwIDAQAB",
     "description": "One shared Codeforces Problem of the Day for every rating",
     "background": {

@@ -170,10 +170,16 @@
         };
     }
 
+    async function ratingLeaderboard(rating) {
+        const result = await request(`/api/leaderboard?metric=rating&rating=${rating}&limit=5`);
+        return result?.leaderboard || [];
+    }
+
     root.CFDailyCloud = {
         configured,
         completeSignIn,
         dashboard,
+        ratingLeaderboard,
         session,
         signIn,
         signOut,

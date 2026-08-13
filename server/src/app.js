@@ -1,7 +1,7 @@
 import express from 'express';
 import { readFileSync } from 'node:fs';
 import { supabase } from './supabase.js';
-import { getLeaderboard, getUserData, syncActivity, syncUser } from './activity.js';
+import { getLeaderboard, getRatingLeaderboard, getUserData, syncActivity, syncUser } from './activity.js';
 
 export const app = express();
 export default app;
@@ -73,6 +73,17 @@ app.post('/api/activity/sync', requireAuth, async (request, response, next) => {
 app.get('/api/leaderboard', requireAuth, async (request, response, next) => {
     try {
         const limit = Math.min(50, Math.max(1, Number(request.query.limit) || 10));
+        if (request.query.metric === 'rating') {
+            const rating = Number(request.query.rating);
+            if (!Number.isInteger(rating) || rating < 800 || rating > 3500 || rating % 100 !== 0) {
+                return response.status(400).json({ error: 'rating must be between 800 and 3500' });
+            }
+            return response.json({
+                metric: 'rating',
+                rating,
+                leaderboard: await getRatingLeaderboard(rating, limit)
+            });
+        }
         const metric = request.query.metric === 'solved' ? 'solved' : 'streak';
         response.json({ metric, leaderboard: await getLeaderboard(limit, metric) });
     } catch (error) {

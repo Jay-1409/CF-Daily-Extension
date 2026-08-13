@@ -578,6 +578,12 @@ select:focus-visible {
     color: var(--accent-dark);
 }
 
+.leaderboard-panel .leaderboard-empty {
+    justify-content: center;
+    color: var(--muted);
+    text-align: center;
+}
+
 #cloudStatus {
     margin-top: 8px;
     color: var(--muted);

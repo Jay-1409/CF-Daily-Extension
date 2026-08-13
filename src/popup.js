@@ -22,8 +22,9 @@ let handle = 'Enter';
 let loadVersion = 0;
 let problemsetPromise;
 let acceptedSubmissionsPromise;
-let leaderboards = { streak: [], solved: [] };
+let leaderboards = { streak: [], solved: [], rating: [] };
 let leaderboardMetric = 'streak';
+let ratingLeaderboardVersion = 0;
 
 function setSignedIn(isSignedIn) {
     signInButton.hidden = isSignedIn;
@@ -50,20 +51,60 @@ function setLeaderboardStatus(message = '', isError = false) {
 
 function renderLeaderboard() {
     const entries = leaderboards[leaderboardMetric] || [];
+    const selectedRating = CFDaily.normalizeRating(ratingSelect.value);
     leaderboardDescription.textContent = leaderboardMetric === 'solved'
-        ? 'Rating-specific POTDs completed'
-        : 'Consecutive active days';
+        ? 'All rating-specific POTDs completed'
+        : leaderboardMetric === 'rating'
+            ? `${selectedRating}-rated POTDs completed`
+            : 'Consecutive active days';
     leaderboardList.replaceChildren();
+    if (!entries.length) {
+        const item = document.createElement('li');
+        item.className = 'leaderboard-empty';
+        item.textContent = leaderboardMetric === 'rating'
+            ? `No ${selectedRating}-rated completions yet.`
+            : 'No leaderboard entries yet.';
+        leaderboardList.append(item);
+        return;
+    }
     for (const entry of entries) {
         const item = document.createElement('li');
         const name = document.createElement('span');
         const score = document.createElement('strong');
         name.textContent = `${entry.rank}. ${entry.displayName}`;
-        score.textContent = leaderboardMetric === 'solved'
-            ? `${entry.totalCompletions} solved`
+        score.textContent = leaderboardMetric === 'solved' || leaderboardMetric === 'rating'
+            ? `${leaderboardMetric === 'rating' ? entry.ratingCompletions : entry.totalCompletions} solved`
             : `${entry.currentStreak} day${entry.currentStreak === 1 ? '' : 's'}`;
         item.append(name, score);
         leaderboardList.append(item);
+    }
+}
+
+function selectLeaderboardMetric(metric) {
+    leaderboardMetric = metric;
+    for (const button of leaderboardButtons) {
+        button.setAttribute('aria-selected', String(button.dataset.leaderboardMetric === metric));
+    }
+}
+
+async function loadRatingLeaderboard() {
+    if (leaderboardPanel.hidden) return;
+    const version = ++ratingLeaderboardVersion;
+    const rating = CFDaily.normalizeRating(ratingSelect.value);
+    selectLeaderboardMetric('rating');
+    renderLeaderboard();
+    setLeaderboardStatus(`Loading ${rating} leaderboard…`);
+    try {
+        const entries = await CFDailyCloud.ratingLeaderboard(rating);
+        if (version !== ratingLeaderboardVersion) return;
+        leaderboards.rating = entries;
+        renderLeaderboard();
+        setLeaderboardStatus();
+    } catch (error) {
+        console.error(error);
+        if (version === ratingLeaderboardVersion) {
+            setLeaderboardStatus(`Could not load the ${rating} leaderboard.`, true);
+        }
     }
 }
 
@@ -246,15 +287,18 @@ async function initialise() {
 ratingSelect.addEventListener('change', async () => {
     const selectedRating = CFDaily.normalizeRating(ratingSelect.value);
     await chrome.storage.local.set({ selectedRating });
-    await loadProblem();
+    await Promise.all([loadProblem(), loadRatingLeaderboard()]);
 });
 
 for (const button of leaderboardButtons) {
-    button.addEventListener('click', () => {
-        leaderboardMetric = button.dataset.leaderboardMetric;
-        for (const candidate of leaderboardButtons) {
-            candidate.setAttribute('aria-selected', String(candidate === button));
+    button.addEventListener('click', async () => {
+        if (button.dataset.leaderboardMetric === 'rating') {
+            await loadRatingLeaderboard();
+            return;
         }
+        ratingLeaderboardVersion += 1;
+        selectLeaderboardMetric(button.dataset.leaderboardMetric);
+        setLeaderboardStatus();
         renderLeaderboard();
     });
 }

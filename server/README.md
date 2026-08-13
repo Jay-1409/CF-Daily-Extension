@@ -13,7 +13,7 @@ activity
   user_id, day, rating, problem_key, completed_at
 ```
 
-One active UTC day contributes one day to a streak, regardless of how many rating-specific POTDs the user completes on that day. The streak leaderboard sorts by current streak, while the solved leaderboard sorts by total rating-specific POTD completions.
+One active UTC day contributes one day to a streak, regardless of how many rating-specific POTDs the user completes on that day. The streak leaderboard sorts by current streak, the solved leaderboard sorts by total rating-specific POTD completions, and each exact rating has an independent completion leaderboard.
 
 ## Run locally
 
